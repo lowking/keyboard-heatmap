@@ -176,7 +176,7 @@ pub fn setup_ui(_cc: &CreationContext) -> Box<dyn App> {
     let (sender, receiver) = mpsc::sync_channel(1);
 
     let state = Arc::new(Mutex::new(State {
-        keyboard_type: KeyboardType::Qwerty87,
+        keyboard_type: KeyboardType::QwertyMac,
         hue: 220. / 360.,
         start_time: chrono::Local::now(),
     }));

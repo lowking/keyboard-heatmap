@@ -10,8 +10,8 @@ mod press_time_map;
 
 fn main() {
     let native_options = eframe::NativeOptions {
-        min_window_size: Some(Vec2 { x: 900., y: 450. }),
-        initial_window_size: Some(Vec2 { x: 1120., y: 450. }),
+        min_window_size: Some(Vec2 { x: 885., y: 450. }),
+        initial_window_size: Some(Vec2 { x: 885., y: 450. }),
         default_theme: Theme::Light,
         resizable: false,
         ..Default::default()
