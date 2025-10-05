@@ -2,6 +2,8 @@ use egui::{Align2, Color32, RichText, Sense, Stroke, Ui, Vec2};
 
 use crate::color::{get_color, get_strike_color};
 use eframe::egui::emath::Rot2;
+use std::sync::atomic::Ordering;
+use crate::press_time_map::AVERAGE_TIMES;
 
 /// Layout in a key box, shows how to display the key contents
 #[derive(Clone)]
@@ -43,7 +45,7 @@ impl KeyBox {
 impl KeyBox {
     pub fn ui(&mut self, ui: &mut Ui) {
         let (mut rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
-        let filled_color = get_color(self.hue, self.press_times);
+        let filled_color = get_color(self.hue, self.press_times * 32 / (AVERAGE_TIMES.load(Ordering::Relaxed) as u32));
         ui.painter().rect_filled(rect, self.rounding, filled_color);
         match &self.layout {
             KeyTextsLayout::TopBottom(top_bottom) => {

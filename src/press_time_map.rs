@@ -1,8 +1,12 @@
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct PressTimesMap {
     pub map: HashMap<rdev::Key, u32>,
 }
+
+pub static TOTLE_TIMES: AtomicUsize  = AtomicUsize::new(1);
+pub static AVERAGE_TIMES: AtomicUsize  = AtomicUsize::new(1);
 
 impl PressTimesMap {
     pub fn new() -> Self {
@@ -33,6 +37,8 @@ impl PressTimesMap {
             Some(v) => self.map.insert(key, v + 1),
             None => self.map.insert(key, 1),
         };
+        TOTLE_TIMES.fetch_add(1, Ordering::Relaxed);
+        AVERAGE_TIMES.store(TOTLE_TIMES.load(Ordering::Relaxed) / self.map.len(), Ordering::Relaxed);
     }
     pub fn get_key_times(&self, key: rdev::Key) -> u32 {
         match self.map.get(&key) {

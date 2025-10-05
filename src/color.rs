@@ -15,7 +15,7 @@ pub fn get_color(hue: f32, times: u32) -> Color32 {
     // let h = 220. / 360.;
     let k = (0.3 - 0.98) / 1.;
     let s = sigmoid(times);
-    let v = k * s * s * s * s + 0.98;
+    let v = k * s.powf(4.) + 0.98;
     let srgb = Hsva::new(hue, s, v, 1.).to_srgb();
     Color32::from_rgb(srgb[0], srgb[1], srgb[2])
 }
