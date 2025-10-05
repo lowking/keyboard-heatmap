@@ -5,14 +5,18 @@ pub struct PressTimesMap {
     pub map: HashMap<rdev::Key, u32>,
 }
 
-pub static TOTLE_TIMES: AtomicUsize  = AtomicUsize::new(1);
-pub static AVERAGE_TIMES: AtomicUsize  = AtomicUsize::new(1);
+pub static TOTLE_TIMES: AtomicUsize = AtomicUsize::new(100);
+pub static AVERAGE_TIMES: AtomicUsize = AtomicUsize::new(1);
 
 impl PressTimesMap {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
+    }
+    pub fn clear() {
+        TOTLE_TIMES.store(100 as usize, Ordering::Relaxed);
+        AVERAGE_TIMES.store(1 as usize, Ordering::Relaxed);
     }
     pub fn key_press(&mut self, key: rdev::Key) {
         // incompatitive cases

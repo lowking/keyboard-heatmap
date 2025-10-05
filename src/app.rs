@@ -16,6 +16,8 @@ use eframe::{
     App, CreationContext,
 };
 use egui::Color32;
+use crate::press_time_map::{TOTLE_TIMES, AVERAGE_TIMES};
+use std::sync::atomic::Ordering;
 
 pub struct State {
     keyboard_type: KeyboardType,
@@ -64,6 +66,7 @@ impl eframe::App for KeyboardHeatmap {
                 if ui.button("Clear").clicked() {
                     state.start_time = chrono::Local::now();
                     press_map.map.clear();
+                    PressTimesMap::clear();
                 }
 
                 ui.separator();
@@ -81,6 +84,11 @@ impl eframe::App for KeyboardHeatmap {
                             &mut state.keyboard_type,
                             KeyboardType::Qwerty87,
                             KeyboardType::Qwerty87.description(),
+                        );
+                        ui.selectable_value(
+                            &mut state.keyboard_type,
+                            KeyboardType::QwertyAliceWeikav,
+                            KeyboardType::QwertyAliceWeikav.description(),
                         );
                     });
 
@@ -113,14 +121,14 @@ impl eframe::App for KeyboardHeatmap {
         self.take_screenshot = false;
 
         // (0, 0) is at the left bottom
-        let toolbar_height = 120;
+        let toolbar_height = 67;
         let state = self.state.lock().unwrap();
         let Some(gl) = frame.gl() else { return };
         let [w, h] = screen_size_px;
         let w = match state.keyboard_type {
             KeyboardType::QwertyMac => w - 20 - 420,
             KeyboardType::Qwerty87 => w - 20,
-            KeyboardType::QwertyAliceWeikav => w - 20,
+            KeyboardType::QwertyAliceWeikav => w,
         };
 
         let h = h - toolbar_height;

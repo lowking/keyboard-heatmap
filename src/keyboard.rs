@@ -696,13 +696,13 @@ impl Keyboard {
             self.draw_single_label_key(map, ctrl_size, rdev::Key::Function, "Fn", ui);
             ui.add_space(65.);
             self.draw_single_label_key(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", ui);
-            self.draw_single_label_key(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Alt", ui);
+            self.draw_single_label_key(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Option", ui);
             ui.add_space(50.);
             self.draw_single_label_key(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", ui);
             self.draw_single_label_key(map, ctrl_size, rdev::Key::MetaLeft, "Win", ui);
             ui.add_space(35.);
             self.draw_single_label_key(map, basic_size, rdev::Key::LeftArrow, "←", ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::DownArrow, "↓", ui);
             self.draw_single_label_key(map, basic_size, rdev::Key::RightArrow, "→", ui);
         });
     }
