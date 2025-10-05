@@ -120,6 +120,7 @@ impl eframe::App for KeyboardHeatmap {
         let w = match state.keyboard_type {
             KeyboardType::QwertyMac => w - 20 - 420,
             KeyboardType::Qwerty87 => w - 20,
+            KeyboardType::QwertyAliceWeikav => w - 20,
         };
 
         let h = h - toolbar_height;
@@ -176,7 +177,7 @@ pub fn setup_ui(_cc: &CreationContext) -> Box<dyn App> {
     let (sender, receiver) = mpsc::sync_channel(1);
 
     let state = Arc::new(Mutex::new(State {
-        keyboard_type: KeyboardType::QwertyMac,
+        keyboard_type: KeyboardType::QwertyAliceWeikav,
         hue: 220. / 360.,
         start_time: chrono::Local::now(),
     }));

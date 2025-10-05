@@ -1,6 +1,7 @@
 use egui::{Align2, Color32, RichText, Sense, Stroke, Ui, Vec2};
 
 use crate::color::{get_color, get_strike_color};
+use eframe::egui::emath::Rot2;
 
 /// Layout in a key box, shows how to display the key contents
 #[derive(Clone)]
@@ -41,7 +42,7 @@ impl KeyBox {
 }
 impl KeyBox {
     pub fn ui(&mut self, ui: &mut Ui) {
-        let (rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
+        let (mut rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
         let filled_color = get_color(self.hue, self.press_times);
         ui.painter().rect_filled(rect, self.rounding, filled_color);
         match &self.layout {

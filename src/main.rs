@@ -9,9 +9,12 @@ mod listen;
 mod press_time_map;
 
 fn main() {
+    let qwerty_87_size = Vec2 { x: 885., y: 450. };
+    let qwerty_alice_size = Vec2 { x: 1060., y: 400. };
+    let size = qwerty_alice_size;
     let native_options = eframe::NativeOptions {
-        min_window_size: Some(Vec2 { x: 885., y: 450. }),
-        initial_window_size: Some(Vec2 { x: 885., y: 450. }),
+        min_window_size: Some(size),
+        initial_window_size: Some(size),
         default_theme: Theme::Light,
         resizable: false,
         ..Default::default()

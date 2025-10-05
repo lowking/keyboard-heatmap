@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 pub enum KeyboardType {
     QwertyMac,
     Qwerty87,
+    QwertyAliceWeikav,
 }
 
 impl KeyboardType {
@@ -20,6 +21,7 @@ impl KeyboardType {
         match self {
             KeyboardType::QwertyMac => "MacBook",
             KeyboardType::Qwerty87 => "87 Keys",
+            KeyboardType::QwertyAliceWeikav => "Weikav Alice 68",
         }
     }
 }
@@ -89,6 +91,17 @@ const THIRD_ALPHA_LINE_PAIRS: [(&str, rdev::Key); 7] = [
     ("M", rdev::Key::KeyM),
 ];
 
+const THIRD_ALPHA_LINE_PAIRS_ALICE: [(&str, rdev::Key); 8] = [
+    ("Z", rdev::Key::KeyZ),
+    ("X", rdev::Key::KeyX),
+    ("C", rdev::Key::KeyC),
+    ("V", rdev::Key::KeyV),
+    ("B1", rdev::Key::KeyB),
+    ("B2", rdev::Key::KeyB),
+    ("N", rdev::Key::KeyN),
+    ("M", rdev::Key::KeyM),
+];
+
 const SECTION_SPACE: f32 = 15.;
 
 pub struct Keyboard {
@@ -108,6 +121,7 @@ impl Keyboard {
         match self.keyboard_type {
             KeyboardType::QwertyMac => self.draw_mac_keyboard(map, ui),
             KeyboardType::Qwerty87 => self.draw_87_keyboard(map, ui),
+            KeyboardType::QwertyAliceWeikav => self.draw_alice_keyboard(map, ui),
         }
     }
 
@@ -501,6 +515,198 @@ impl Keyboard {
             self.draw_single_label_key(map, basic_size, rdev::Key::RightArrow, "→", ui);
         });
     }
+
+    fn draw_alice_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui) {
+        let basic_size = Vec2 { x: 50., y: 50. };
+        let left_divide_size = 10.;
+        let middle_divide_size = 8.;
+        // 1st line
+        ui.horizontal(|ui| {
+            ui.add_space(left_divide_size * 2.);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Escape, "Esc", ui);
+
+            ui.add_space(left_divide_size);
+
+            for key_pair in NUM_KEY_LINE_PAIRS.iter() {
+                self.draw_double_labels_key(
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                );
+                if key_pair.2 == rdev::Key::Num2 || key_pair.2 == rdev::Key::Num6 || key_pair.2 == rdev::Key::Num0 {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+            }
+
+            self.draw_single_label_key(
+                map,
+                Vec2 { x: 110., y: 50. },
+                rdev::Key::Backspace,
+                "Back",
+                ui,
+            );
+        });
+        ui.add_space(3.);
+
+        // 2nd line
+        ui.horizontal(|ui| {
+            ui.add_space(left_divide_size);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Escape, "Esc", ui);
+
+            ui.add_space(left_divide_size);
+
+            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", ui);
+
+            for key_pair in FIRST_ALPHA_LINE_PAIRS.iter() {
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                if key_pair.1 == rdev::Key::KeyQ {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+                if key_pair.1 == rdev::Key::KeyT {
+                    ui.add_space(35.);
+                    continue;
+                }
+                if key_pair.1 == rdev::Key::KeyO {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+            }
+
+            for key_pair in [
+                ("[", "{", rdev::Key::LeftBracket),
+                ("]", "}", rdev::Key::RightBracket),
+            ] {
+                self.draw_double_labels_key(
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                );
+            }
+
+            let key_pair = ("\\", "|", rdev::Key::BackSlash);
+            self.draw_double_labels_key(
+                map,
+                Vec2 { x: 80., y: 50. },
+                key_pair.2,
+                key_pair.0,
+                key_pair.1,
+                ui,
+            );
+        });
+        ui.add_space(3.);
+
+        // caps lock line
+        ui.horizontal(|ui| {
+            self.draw_single_label_key(map, basic_size, rdev::Key::Escape, "Esc", ui);
+
+            ui.add_space(left_divide_size);
+
+            self.draw_single_label_key(
+                map,
+                Vec2 { x: 85., y: 50. },
+                rdev::Key::CapsLock,
+                "Caps\nLock",
+                ui,
+            );
+
+            for key_pair in SECOND_ALPHA_LINE_PAIRS.iter() {
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                if key_pair.1 == rdev::Key::KeyA {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+                if key_pair.1 == rdev::Key::KeyG {
+                    ui.add_space(50.);
+                    continue;
+                }
+                if key_pair.1 == rdev::Key::KeyL {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+            }
+
+            for key_pair in [
+                (":", ";", rdev::Key::SemiColon),
+                ("\"", "'", rdev::Key::Quote),
+            ] {
+                self.draw_double_labels_key(
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                );
+            }
+
+            // enter
+            self.draw_single_label_key(
+                map,
+                Vec2 { x: 125., y: 50. },
+                rdev::Key::Return,
+                "Enter",
+                ui,
+            );
+        });
+        ui.add_space(3.);
+
+        // shift line
+        ui.horizontal(|ui| {
+            self.draw_empty_key(basic_size, ui);
+
+            self.draw_single_label_key(
+                map,
+                Vec2 { x: 118., y: 50. },
+                rdev::Key::ShiftLeft,
+                "Shift",
+                ui,
+            );
+
+            for key_pair in THIRD_ALPHA_LINE_PAIRS_ALICE.iter() {
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                if key_pair.1 == rdev::Key::KeyZ {
+                    ui.add_space(middle_divide_size);
+                    continue;
+                }
+                if key_pair.0 == "B1" {
+                    ui.add_space(10.);
+                    continue;
+                }
+            }
+
+            for key_pair in [
+                ("<", ",", rdev::Key::Comma),
+                (">", ".", rdev::Key::Dot),
+                ("?", "/", rdev::Key::Slash),
+            ] {
+                self.draw_double_labels_key(
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                );
+                if key_pair.2 == rdev::Key::Comma {
+                    ui.add_space(middle_divide_size);
+                }
+            }
+
+            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui);
+            // right shift
+            self.draw_single_label_key(map, Vec2 { x: 100., y: 50. }, rdev::Key::ShiftRight, "Shift", ui);
+        });
+        ui.add_space(3.);
+
+        // last line
+        ui.horizontal(|ui| {
+            self.draw_empty_key(basic_size, ui);
+
+            let ctrl_size = Vec2 { x: 65., y: 50. };
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", ui);
+
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::Function, "Fn", ui);
+            ui.add_space(65.);
+            self.draw_single_label_key(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", ui);
+            self.draw_single_label_key(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Alt", ui);
+            ui.add_space(50.);
+            self.draw_single_label_key(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", ui);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::MetaLeft, "Win", ui);
+            ui.add_space(35.);
+            self.draw_single_label_key(map, basic_size, rdev::Key::LeftArrow, "←", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::RightArrow, "→", ui);
+        });
+    }
+
     fn draw_double_labels_key(
         &mut self,
         map: &MutexGuard<PressTimesMap>,
