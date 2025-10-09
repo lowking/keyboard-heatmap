@@ -60,6 +60,13 @@ impl eframe::App for KeyboardHeatmap {
             // toolbar
             ui.horizontal(|ui| {
                 ui.label(format!(
+                    "Press count: {}",
+                    TOTLE_TIMES.load(Ordering::Relaxed) - 100
+                ));
+
+                ui.separator();
+
+                ui.label(format!(
                     "Recording since {}",
                     state.start_time.format("%y-%m-%d %H:%M:%S")
                 ));
