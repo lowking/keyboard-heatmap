@@ -51,12 +51,6 @@ impl eframe::App for KeyboardHeatmap {
 
         egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
             let press_map = &mut self.press_map.lock().unwrap();
-            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue);
-            keyboard.draw(press_map, ui);
-
-            ui.add_space(30.);
-            ui.separator();
-
             // toolbar
             ui.horizontal(|ui| {
                 ui.label(format!(
@@ -109,7 +103,7 @@ impl eframe::App for KeyboardHeatmap {
                         v: 1.0,
                         a: 1.0,
                     }
-                    .into()
+                        .into()
                 });
 
                 ui.separator();
@@ -117,6 +111,12 @@ impl eframe::App for KeyboardHeatmap {
                     self.take_screenshot = true;
                 }
             });
+
+            ui.separator();
+            ui.add_space(30.);
+
+            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue);
+            keyboard.draw(press_map, ui);
         });
     }
 
@@ -128,7 +128,7 @@ impl eframe::App for KeyboardHeatmap {
         self.take_screenshot = false;
 
         // (0, 0) is at the left bottom
-        let toolbar_height = 67;
+        let toolbar_height = 56;
         let state = self.state.lock().unwrap();
         let Some(gl) = frame.gl() else { return };
         let [w, h] = screen_size_px;
@@ -138,13 +138,14 @@ impl eframe::App for KeyboardHeatmap {
             KeyboardType::QwertyAliceWeikav => w,
         };
 
-        let h = h - toolbar_height;
+        let x : u32 = 0;
+        let h = h as i32 - toolbar_height;
         let mut buf = vec![0u8; w as usize * h as usize * 4];
         let pixels = glow::PixelPackData::Slice(&mut buf[..]);
         unsafe {
             gl.read_pixels(
                 0,
-                toolbar_height as i32,
+                0,
                 w as i32,
                 h as i32,
                 glow::RGBA,
