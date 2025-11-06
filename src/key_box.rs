@@ -1,6 +1,7 @@
 use egui::{Align2, Color32, RichText, Sense, Stroke, Ui, Vec2};
 
 use crate::color::{get_color, get_strike_color};
+use crate::app::FontFamily;
 use eframe::egui::emath::Rot2;
 use std::sync::atomic::Ordering;
 use crate::press_time_map::AVERAGE_TIMES;
@@ -24,6 +25,7 @@ pub struct KeyBox {
     rotation: f32, // rotation angle in radians
     offset: Vec2,  // position offset for alignment after rotation
     dark_mode: bool,
+    font_family: FontFamily,
 }
 
 impl KeyBox {
@@ -34,6 +36,7 @@ impl KeyBox {
         press_times: u32,
         hue: f32,
         dark_mode: bool,
+        font_family: FontFamily,
     ) -> KeyBox {
         Self {
             size,
@@ -46,6 +49,7 @@ impl KeyBox {
             rotation: 0.0,
             offset: Vec2::ZERO,
             dark_mode,
+            font_family,
         }
     }
 
@@ -75,6 +79,12 @@ impl KeyBox {
             Color32::from_rgb(100, 100, 100)  // Darker gray for dark mode
         } else {
             Color32::from_rgb(32, 5, 64)  // Dark purple for light mode
+        };
+
+        // Get font ID based on font family
+        let font_id = match self.font_family {
+            FontFamily::Monospace => egui::FontId::monospace(14.),
+            FontFamily::Proportional => egui::FontId::proportional(14.),
         };
 
         if self.rotation != 0.0 {
@@ -152,32 +162,55 @@ impl KeyBox {
                 );
             }
 
-            // Draw text at center
+            // Draw text at center with rotation using Shape::Text
             match &self.layout {
                 KeyTextsLayout::TopBottom(top_bottom) => {
-                    ui.painter().text(
-                        center,
-                        Align2::CENTER_BOTTOM,
-                        top_bottom.0.clone(),
-                        egui::FontId::monospace(13.),
+                    // For top/bottom layout, use two separate text shapes
+                    // Calculate rotated offsets for proper alignment
+                    let rotation_transform = Rot2::from_angle(self.rotation);
+                    let top_offset = rotation_transform * egui::Vec2::new(0.0, -7.5);
+                    let bottom_offset = rotation_transform * egui::Vec2::new(0.0, 7.5);
+
+                    let mut top_shape = egui::Shape::text(
+                        &ui.fonts(),
+                        center + top_offset,
+                        Align2::CENTER_CENTER,
+                        &top_bottom.0,
+                        font_id.clone(),
                         text_color,
                     );
-                    ui.painter().text(
-                        center,
-                        Align2::CENTER_TOP,
-                        top_bottom.1.clone(),
-                        egui::FontId::monospace(13.),
+                    if let egui::Shape::Text(ref mut ts) = top_shape {
+                        ts.angle = self.rotation;
+                    }
+                    ui.painter().add(top_shape);
+
+                    let mut bottom_shape = egui::Shape::text(
+                        &ui.fonts(),
+                        center + bottom_offset,
+                        Align2::CENTER_CENTER,
+                        &top_bottom.1,
+                        font_id.clone(),
                         text_color,
                     );
+                    if let egui::Shape::Text(ref mut ts) = bottom_shape {
+                        ts.angle = self.rotation;
+                    }
+                    ui.painter().add(bottom_shape);
                 }
                 KeyTextsLayout::Center1(text) => {
-                    ui.painter().text(
+                    // For single text, rotate it
+                    let mut text_shape = egui::Shape::text(
+                        &ui.fonts(),
                         center,
                         Align2::CENTER_CENTER,
                         text,
-                        egui::FontId::monospace(13.),
+                        font_id.clone(),
                         text_color,
                     );
+                    if let egui::Shape::Text(ref mut ts) = text_shape {
+                        ts.angle = self.rotation;
+                    }
+                    ui.painter().add(text_shape);
                 }
             }
         } else {
@@ -186,18 +219,19 @@ impl KeyBox {
             ui.painter().rect_filled(draw_rect, self.rounding, filled_color);
             match &self.layout {
                 KeyTextsLayout::TopBottom(top_bottom) => {
+                    // Use two separate text for better alignment
                     ui.painter().text(
-                        draw_rect.center(),
-                        Align2::CENTER_BOTTOM,
-                        top_bottom.0.clone(),
-                        egui::FontId::monospace(13.),
+                        draw_rect.center() + egui::Vec2::new(0.0, -7.5),
+                        Align2::CENTER_CENTER,
+                        &top_bottom.0,
+                        font_id.clone(),
                         text_color,
                     );
                     ui.painter().text(
-                        draw_rect.center(),
-                        Align2::CENTER_TOP,
-                        top_bottom.1.clone(),
-                        egui::FontId::monospace(13.),
+                        draw_rect.center() + egui::Vec2::new(0.0, 7.5),
+                        Align2::CENTER_CENTER,
+                        &top_bottom.1,
+                        font_id.clone(),
                         text_color,
                     );
                 }
@@ -206,7 +240,7 @@ impl KeyBox {
                         draw_rect.center(),
                         Align2::CENTER_CENTER,
                         text,
-                        egui::FontId::monospace(13.),
+                        font_id.clone(),
                         text_color,
                     );
                 }

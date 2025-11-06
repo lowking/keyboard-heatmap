@@ -16,7 +16,7 @@ use eframe::{
     App, CreationContext,
 };
 use egui::Color32;
-use crate::press_time_map::{TOTLE_TIMES, AVERAGE_TIMES};
+use crate::press_time_map::TOTLE_TIMES;
 use std::sync::atomic::Ordering;
 
 pub struct State {
@@ -25,6 +25,22 @@ pub struct State {
     start_time: DateTime<chrono::Local>,
     dark_mode: bool,
     manual_theme_override: bool,
+    font_family: FontFamily,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum FontFamily {
+    Monospace,
+    Proportional,
+}
+
+impl FontFamily {
+    pub fn description(&self) -> &'static str {
+        match self {
+            FontFamily::Monospace => "Monospace",
+            FontFamily::Proportional => "Proportional",
+        }
+    }
 }
 
 struct KeyboardHeatmap {
@@ -119,8 +135,7 @@ impl eframe::App for KeyboardHeatmap {
 
                 ui.separator();
 
-                ui.label("Keyboard: ");
-                egui::ComboBox::from_label("")
+                egui::ComboBox::from_id_source("keyboard_selector")
                     .selected_text(state.keyboard_type.description())
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
@@ -142,16 +157,33 @@ impl eframe::App for KeyboardHeatmap {
 
                 ui.separator();
 
-                ui.label("Theme Palette: ");
                 color::color_slider_1d(ui, &mut state.hue, |h| {
                     HsvaGamma {
                         h,
-                        s: 1.0,
-                        v: 1.0,
+                        s: 0.6,
+                        v: 0.75,
                         a: 1.0,
                     }
                         .into()
                 });
+
+                ui.separator();
+
+                // Font family selector (before dark mode toggle)
+                egui::ComboBox::from_id_source("font_selector")
+                    .selected_text(state.font_family.description())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut state.font_family,
+                            FontFamily::Monospace,
+                            FontFamily::Monospace.description(),
+                        );
+                        ui.selectable_value(
+                            &mut state.font_family,
+                            FontFamily::Proportional,
+                            FontFamily::Proportional.description(),
+                        );
+                    });
 
                 ui.separator();
 
@@ -171,6 +203,7 @@ impl eframe::App for KeyboardHeatmap {
                 }
 
                 ui.separator();
+
                 if ui.button("Save as PNG").clicked() {
                     self.take_screenshot = true;
                 }
@@ -179,7 +212,7 @@ impl eframe::App for KeyboardHeatmap {
             ui.separator();
             ui.add_space(30.);
 
-            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue, state.dark_mode);
+            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue, state.dark_mode, state.font_family);
             keyboard.draw(press_map, ui);
         });
     }
@@ -202,7 +235,6 @@ impl eframe::App for KeyboardHeatmap {
             KeyboardType::QwertyAliceWeikav => w,
         };
 
-        let x : u32 = 0;
         let h = h as i32 - toolbar_height;
         let mut buf = vec![0u8; w as usize * h as usize * 4];
         let pixels = glow::PixelPackData::Slice(&mut buf[..]);
@@ -262,6 +294,7 @@ pub fn setup_ui(_cc: &CreationContext) -> Box<dyn App> {
         start_time: chrono::Local::now(),
         dark_mode: false,
         manual_theme_override: false,
+        font_family: FontFamily::Monospace,
     }));
     let press_map = Arc::new(Mutex::new(PressTimesMap::new()));
 

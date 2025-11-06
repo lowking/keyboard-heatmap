@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::{
     key_box::{KeyBox, KeyTextsLayout},
     press_time_map::PressTimesMap,
+    app::FontFamily,
 };
 
 use egui::{Color32, Sense, Ui, Vec2};
@@ -213,11 +214,12 @@ pub struct Keyboard {
     // [0, 1], the hue of the color
     hue: f32,
     dark_mode: bool,
+    font_family: FontFamily,
 }
 
 impl Keyboard {
-    pub fn new(keyboard_type: KeyboardType, hue: f32, dark_mode: bool) -> Self {
-        Self { keyboard_type, hue, dark_mode }
+    pub fn new(keyboard_type: KeyboardType, hue: f32, dark_mode: bool, font_family: FontFamily) -> Self {
+        Self { keyboard_type, hue, dark_mode, font_family }
     }
 }
 impl Keyboard {
@@ -380,6 +382,7 @@ impl Keyboard {
                 left_times,
                 self.hue,
                 self.dark_mode,
+                self.font_family,
             );
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 24. }, Sense::hover());
@@ -395,6 +398,7 @@ impl Keyboard {
                 up_times,
                 self.hue,
                 self.dark_mode,
+                self.font_family,
             );
             let down_times = map.get_key_times(rdev::Key::DownArrow);
             let mut down_key = KeyBox::new(
@@ -404,6 +408,7 @@ impl Keyboard {
                 down_times,
                 self.hue,
                 self.dark_mode,
+                self.font_family,
             );
             ui.vertical(|ui| {
                 up_key.ui(ui);
@@ -419,6 +424,7 @@ impl Keyboard {
                 right_times,
                 self.hue,
                 self.dark_mode,
+                self.font_family,
             );
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 25. }, Sense::hover());
@@ -893,6 +899,7 @@ impl Keyboard {
             times,
             self.hue,
             self.dark_mode,
+                self.font_family,
         );
         key.ui(ui);
     }
@@ -916,6 +923,7 @@ impl Keyboard {
             times,
             self.hue,
             self.dark_mode,
+                self.font_family,
         )
         .with_rotation_and_offset(rotation, offset);
         key.ui(ui);
@@ -937,6 +945,7 @@ impl Keyboard {
             times,
             self.hue,
             self.dark_mode,
+                self.font_family,
         );
         key.ui(ui);
     }
@@ -959,6 +968,7 @@ impl Keyboard {
             times,
             self.hue,
             self.dark_mode,
+                self.font_family,
         )
         .with_rotation_and_offset(rotation, offset);
         key.ui(ui);
