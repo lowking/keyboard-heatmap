@@ -23,6 +23,8 @@ pub struct State {
     keyboard_type: KeyboardType,
     hue: f32,
     start_time: DateTime<chrono::Local>,
+    dark_mode: bool,
+    manual_theme_override: bool,
 }
 
 struct KeyboardHeatmap {
@@ -40,6 +42,51 @@ impl eframe::App for KeyboardHeatmap {
         } = self;
         let mut state = state.lock().unwrap();
 
+        // Get system theme preference from macOS only if not manually overridden
+        if !state.manual_theme_override {
+            #[cfg(target_os = "macos")]
+            let system_dark_mode = {
+                use std::process::Command;
+                if let Ok(output) = Command::new("defaults")
+                    .args(&["read", "-g", "AppleInterfaceStyle"])
+                    .output()
+                {
+                    String::from_utf8_lossy(&output.stdout).contains("Dark")
+                } else {
+                    false
+                }
+            };
+            #[cfg(not(target_os = "macos"))]
+            let system_dark_mode = false;
+
+            // Auto-switch theme based on system preference
+            if system_dark_mode != state.dark_mode {
+                state.dark_mode = system_dark_mode;
+                // Change hue when theme changes
+                if state.dark_mode {
+                    state.hue = 0.0;  // Dark mode: red
+                } else {
+                    state.hue = 220. / 360.;  // Light mode: blue
+                }
+            }
+        }
+
+        // Apply theme
+        if state.dark_mode {
+            ctx.set_visuals(egui::Visuals::dark());
+        } else {
+            ctx.set_visuals(egui::Visuals::light());
+        }
+
+        // Request continuous repaint to update colors even when in background
+        ctx.request_repaint();
+
+        let background_color = if state.dark_mode {
+            Color32::from_rgb(0x3A, 0x38, 0x37)
+        } else {
+            Color32::WHITE
+        };
+
         let frame = egui::Frame::none()
             .inner_margin(egui::style::Margin {
                 left: 30.,
@@ -47,7 +94,7 @@ impl eframe::App for KeyboardHeatmap {
                 top: 30.,
                 bottom: 30.,
             })
-            .fill(Color32::WHITE);
+            .fill(background_color);
 
         egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
             let press_map = &mut self.press_map.lock().unwrap();
@@ -107,6 +154,23 @@ impl eframe::App for KeyboardHeatmap {
                 });
 
                 ui.separator();
+
+                // Dark mode toggle
+                let theme_text = if state.dark_mode { "☀ Light" } else { "🌙 Dark" };
+                if ui.button(theme_text).clicked() {
+                    state.manual_theme_override = true;
+                    state.dark_mode = !state.dark_mode;
+                    // Change hue when switching theme
+                    if state.dark_mode {
+                        // Dark mode: red (0.0)
+                        state.hue = 0.0;
+                    } else {
+                        // Light mode: blue (220/360)
+                        state.hue = 220. / 360.;
+                    }
+                }
+
+                ui.separator();
                 if ui.button("Save as PNG").clicked() {
                     self.take_screenshot = true;
                 }
@@ -115,7 +179,7 @@ impl eframe::App for KeyboardHeatmap {
             ui.separator();
             ui.add_space(30.);
 
-            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue);
+            let mut keyboard = keyboard::Keyboard::new(state.keyboard_type, state.hue, state.dark_mode);
             keyboard.draw(press_map, ui);
         });
     }
@@ -196,6 +260,8 @@ pub fn setup_ui(_cc: &CreationContext) -> Box<dyn App> {
         keyboard_type: KeyboardType::QwertyAliceWeikav,
         hue: 220. / 360.,
         start_time: chrono::Local::now(),
+        dark_mode: false,
+        manual_theme_override: false,
     }));
     let press_map = Arc::new(Mutex::new(PressTimesMap::new()));
 

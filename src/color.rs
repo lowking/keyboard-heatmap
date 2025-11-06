@@ -11,18 +11,33 @@ pub fn sigmoid(times: u32) -> f32 {
 }
 
 /// Decides color of the key by hue (as a theme) and times key pressed
-pub fn get_color(hue: f32, times: u32) -> Color32 {
+pub fn get_color(hue: f32, times: u32, dark_mode: bool) -> Color32 {
     // let h = 220. / 360.;
-    let k = (0.3 - 0.98) / 1.;
     let s = sigmoid(times);
-    let v = k * s.powf(4.) + 0.98;
+    let v = if dark_mode {
+        // Dark mode: from very dark to medium (0.12 to 0.45)
+        // More presses = higher v (brighter)
+        let k = (0.25 - 0.015) / 1.;
+        k * s.powf(4.) + 0.015
+    } else {
+        // Light mode: from bright to darker (0.98 to 0.3)
+        // More presses = lower v (darker)
+        let k = (0.3 - 0.98) / 1.;
+        k * s.powf(4.) + 0.98
+    };
     let srgb = Hsva::new(hue, s, v, 1.).to_srgb();
     Color32::from_rgb(srgb[0], srgb[1], srgb[2])
 }
 
-pub fn get_strike_color(color: Color32) -> Color32 {
+pub fn get_strike_color(color: Color32, dark_mode: bool) -> Color32 {
     let mut hsv = Hsva::from_srgb([color.r(), color.g(), color.b()]);
-    hsv.v -= 0.12;
+    if dark_mode {
+        // Dark mode: border lighter than key
+        hsv.v += 0.03;
+    } else {
+        // Light mode: border darker than key
+        hsv.v -= 0.12;
+    }
     let srgb = hsv.to_srgb();
     Color32::from_rgb(srgb[0], srgb[1], srgb[2])
 }
@@ -31,7 +46,7 @@ pub fn get_strike_color(color: Color32) -> Color32 {
 fn test_get_color() {
     let times_vec: Vec<u32> = vec![0, 1, 10, 100, 1000];
     times_vec.iter().for_each(|&times| {
-        let _color = get_color(210. / 360., times);
+        let _color = get_color(210. / 360., times, false);
     });
 }
 

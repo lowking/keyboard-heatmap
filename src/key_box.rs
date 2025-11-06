@@ -23,6 +23,7 @@ pub struct KeyBox {
     hue: f32,
     rotation: f32, // rotation angle in radians
     offset: Vec2,  // position offset for alignment after rotation
+    dark_mode: bool,
 }
 
 impl KeyBox {
@@ -32,6 +33,7 @@ impl KeyBox {
         key: rdev::Key,
         press_times: u32,
         hue: f32,
+        dark_mode: bool,
     ) -> KeyBox {
         Self {
             size,
@@ -43,6 +45,7 @@ impl KeyBox {
             hue,
             rotation: 0.0,
             offset: Vec2::ZERO,
+            dark_mode,
         }
     }
 
@@ -64,8 +67,15 @@ impl KeyBox {
 }
 impl KeyBox {
     pub fn ui(&mut self, ui: &mut Ui) {
-        let (rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
-        let filled_color = get_color(self.hue, self.press_times * 32 / (AVERAGE_TIMES.load(Ordering::Relaxed) as u32));
+        let (rect, _resp) = ui.allocate_exact_size(self.size, Sense::hover());
+        let filled_color = get_color(self.hue, self.press_times * 32 / (AVERAGE_TIMES.load(Ordering::Relaxed) as u32), self.dark_mode);
+
+        // Text color based on theme
+        let text_color = if self.dark_mode {
+            Color32::from_rgb(100, 100, 100)  // Darker gray for dark mode
+        } else {
+            Color32::from_rgb(32, 5, 64)  // Dark purple for light mode
+        };
 
         if self.rotation != 0.0 {
             // Draw rotated key with rounded corners using mesh
@@ -133,7 +143,7 @@ impl KeyBox {
             ui.painter().add(egui::Shape::mesh(mesh));
 
             // Draw stroke (outline) - use the same vertices for consistent shape
-            let stroke_color = get_strike_color(filled_color);
+            let stroke_color = get_strike_color(filled_color, self.dark_mode);
             for i in 0..vertices.len() {
                 let next_i = (i + 1) % vertices.len();
                 ui.painter().line_segment(
@@ -150,14 +160,14 @@ impl KeyBox {
                         Align2::CENTER_BOTTOM,
                         top_bottom.0.clone(),
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                     ui.painter().text(
                         center,
                         Align2::CENTER_TOP,
                         top_bottom.1.clone(),
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                 }
                 KeyTextsLayout::Center1(text) => {
@@ -166,7 +176,7 @@ impl KeyBox {
                         Align2::CENTER_CENTER,
                         text,
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                 }
             }
@@ -181,14 +191,14 @@ impl KeyBox {
                         Align2::CENTER_BOTTOM,
                         top_bottom.0.clone(),
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                     ui.painter().text(
                         draw_rect.center(),
                         Align2::CENTER_TOP,
                         top_bottom.1.clone(),
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                 }
                 KeyTextsLayout::Center1(text) => {
@@ -197,7 +207,7 @@ impl KeyBox {
                         Align2::CENTER_CENTER,
                         text,
                         egui::FontId::monospace(13.),
-                        Color32::from_rgb(32, 5, 64),
+                        text_color,
                     );
                 }
             }
@@ -207,7 +217,7 @@ impl KeyBox {
                 self.rounding,
                 Stroke {
                     width: self.stroke_width,
-                    color: get_strike_color(filled_color),
+                    color: get_strike_color(filled_color, self.dark_mode),
                 },
             );
         }
@@ -239,7 +249,32 @@ impl KeyBox {
                     ui.ctx(),
                     egui::Id::new(format!("key_hover_{:?}", self.key)),
                     |ui| {
-                        ui.label(RichText::new(format!("{}", self.press_times)));
+                        // Remove background and border
+                        ui.visuals_mut().window_fill = Color32::TRANSPARENT;
+                        ui.visuals_mut().window_stroke = egui::Stroke::NONE;
+
+                        // Different shadow for dark mode and light mode
+                        ui.style_mut().visuals.window_shadow = if self.dark_mode {
+                            // Dark mode shadow
+                            egui::epaint::Shadow {
+                                extrusion: 8.0,
+                                color: Color32::from_black_alpha(100),
+                            }
+                        } else {
+                            // Light mode shadow
+                            egui::epaint::Shadow {
+                                extrusion: 8.0,
+                                color: Color32::from_black_alpha(40),
+                            }
+                        };
+
+                        // Display number with appropriate color for visibility
+                        let tooltip_text_color = if self.dark_mode {
+                            Color32::from_rgb(220, 220, 220)  // 暗黑模式：亮灰色
+                        } else {
+                            Color32::from_rgb(50, 50, 50)  // 浅色模式：深灰色
+                        };
+                        ui.label(RichText::new(format!("{}", self.press_times)).color(tooltip_text_color));
                     }
                 );
             }

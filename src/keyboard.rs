@@ -212,11 +212,12 @@ pub struct Keyboard {
     keyboard_type: KeyboardType,
     // [0, 1], the hue of the color
     hue: f32,
+    dark_mode: bool,
 }
 
 impl Keyboard {
-    pub fn new(keyboard_type: KeyboardType, hue: f32) -> Self {
-        Self { keyboard_type, hue }
+    pub fn new(keyboard_type: KeyboardType, hue: f32, dark_mode: bool) -> Self {
+        Self { keyboard_type, hue, dark_mode }
     }
 }
 impl Keyboard {
@@ -378,6 +379,7 @@ impl Keyboard {
                 rdev::Key::LeftArrow,
                 left_times,
                 self.hue,
+                self.dark_mode,
             );
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 24. }, Sense::hover());
@@ -392,6 +394,7 @@ impl Keyboard {
                 rdev::Key::UpArrow,
                 up_times,
                 self.hue,
+                self.dark_mode,
             );
             let down_times = map.get_key_times(rdev::Key::DownArrow);
             let mut down_key = KeyBox::new(
@@ -400,6 +403,7 @@ impl Keyboard {
                 rdev::Key::DownArrow,
                 down_times,
                 self.hue,
+                self.dark_mode,
             );
             ui.vertical(|ui| {
                 up_key.ui(ui);
@@ -414,6 +418,7 @@ impl Keyboard {
                 rdev::Key::RightArrow,
                 right_times,
                 self.hue,
+                self.dark_mode,
             );
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 25. }, Sense::hover());
@@ -887,6 +892,7 @@ impl Keyboard {
             key,
             times,
             self.hue,
+            self.dark_mode,
         );
         key.ui(ui);
     }
@@ -909,6 +915,7 @@ impl Keyboard {
             key,
             times,
             self.hue,
+            self.dark_mode,
         )
         .with_rotation_and_offset(rotation, offset);
         key.ui(ui);
@@ -929,6 +936,7 @@ impl Keyboard {
             key,
             times,
             self.hue,
+            self.dark_mode,
         );
         key.ui(ui);
     }
@@ -950,6 +958,7 @@ impl Keyboard {
             key,
             times,
             self.hue,
+            self.dark_mode,
         )
         .with_rotation_and_offset(rotation, offset);
         key.ui(ui);
