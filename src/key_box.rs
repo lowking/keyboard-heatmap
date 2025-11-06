@@ -26,6 +26,8 @@ pub struct KeyBox {
     offset: Vec2,  // position offset for alignment after rotation
     dark_mode: bool,
     font_family: FontFamily,
+    font_size: f32,
+    bold: bool,
 }
 
 impl KeyBox {
@@ -37,6 +39,8 @@ impl KeyBox {
         hue: f32,
         dark_mode: bool,
         font_family: FontFamily,
+        font_size: f32,
+        bold: bool,
     ) -> KeyBox {
         Self {
             size,
@@ -50,9 +54,12 @@ impl KeyBox {
             offset: Vec2::ZERO,
             dark_mode,
             font_family,
+            font_size,
+            bold,
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_rotation(mut self, rotation: f32) -> Self {
         self.rotation = rotation;
         self
@@ -64,6 +71,7 @@ impl KeyBox {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_offset(mut self, offset: Vec2) -> Self {
         self.offset = offset;
         self
@@ -81,136 +89,179 @@ impl KeyBox {
             Color32::from_rgb(32, 5, 64)  // Dark purple for light mode
         };
 
-        // Get font ID based on font family
-        let font_id = match self.font_family {
-            FontFamily::Monospace => egui::FontId::monospace(14.),
-            FontFamily::Proportional => egui::FontId::proportional(14.),
+        // Get font ID based on font family and apply bold if needed
+        let font_id = if self.bold {
+            // For bold text, increase the font size slightly and use stronger stroke
+            match self.font_family {
+                FontFamily::Monospace => egui::FontId::monospace(self.font_size * 1.1),
+                FontFamily::Proportional => egui::FontId::proportional(self.font_size * 1.1),
+            }
+        } else {
+            match self.font_family {
+                FontFamily::Monospace => egui::FontId::monospace(self.font_size),
+                FontFamily::Proportional => egui::FontId::proportional(self.font_size),
+            }
         };
 
         if self.rotation != 0.0 {
-            // Draw rotated key with rounded corners using mesh
+            // Draw rotated key using transform
             let center = rect.center() + self.offset;
             let rotation = Rot2::from_angle(self.rotation);
             let half_size = self.size * 0.5;
-            let corner_radius = self.rounding;
-            let segments_per_corner = 8;
 
-            // Generate all vertices for the rounded rectangle in local coordinates,
-            // then rotate them around the center
+            // Create rounded rectangle mesh with proper rounding
+            let mut mesh = egui::Mesh::default();
+
+            // Number of segments per corner for rounded corners
+            let corner_segments = 8;
+            let rounding = self.rounding.min(half_size.x.min(half_size.y));
+
+            // Build rounded rectangle vertices in order
             let mut vertices = Vec::new();
 
-            // Helper to add corner arc vertices in local space
-            let mut add_corner_vertices = |corner_local: egui::Vec2, start_angle: f32| {
-                for i in 0..=segments_per_corner {
-                    let angle = start_angle + (i as f32 / segments_per_corner as f32) * std::f32::consts::PI * 0.5;
-                    let arc_offset = egui::Vec2::new(angle.cos(), angle.sin()) * corner_radius;
-                    let local_point = corner_local + arc_offset;
-                    // Rotate the local point and translate to world space
-                    let world_point = center + rotation * local_point;
-                    vertices.push(world_point);
-                }
-            };
+            // Corner centers (inset by rounding radius)
+            let corner_centers = [
+                egui::Vec2::new(-half_size.x + rounding, -half_size.y + rounding), // top-left
+                egui::Vec2::new(half_size.x - rounding, -half_size.y + rounding),  // top-right
+                egui::Vec2::new(half_size.x - rounding, half_size.y - rounding),   // bottom-right
+                egui::Vec2::new(-half_size.x + rounding, half_size.y - rounding),  // bottom-left
+            ];
 
-            // Top-left corner (local coordinates)
-            add_corner_vertices(
-                egui::Vec2::new(-half_size.x + corner_radius, -half_size.y + corner_radius),
-                std::f32::consts::PI
-            );
+            // Generate vertices for each corner arc (clockwise from each corner's start angle)
+            // Top-left corner: from 180° to 270°
+            for j in 0..=corner_segments {
+                let t = j as f32 / corner_segments as f32;
+                let angle = std::f32::consts::PI + t * std::f32::consts::PI * 0.5;
+                let offset = egui::Vec2::new(angle.cos() * rounding, angle.sin() * rounding);
+                let local_pos = corner_centers[0] + offset;
+                let rotated_pos = center + rotation * local_pos;
+                vertices.push(rotated_pos);
+            }
 
-            // Top-right corner
-            add_corner_vertices(
-                egui::Vec2::new(half_size.x - corner_radius, -half_size.y + corner_radius),
-                -std::f32::consts::PI * 0.5
-            );
+            // Top-right corner: from 270° to 0°
+            for j in 0..=corner_segments {
+                let t = j as f32 / corner_segments as f32;
+                let angle = std::f32::consts::PI * 1.5 + t * std::f32::consts::PI * 0.5;
+                let offset = egui::Vec2::new(angle.cos() * rounding, angle.sin() * rounding);
+                let local_pos = corner_centers[1] + offset;
+                let rotated_pos = center + rotation * local_pos;
+                vertices.push(rotated_pos);
+            }
 
-            // Bottom-right corner
-            add_corner_vertices(
-                egui::Vec2::new(half_size.x - corner_radius, half_size.y - corner_radius),
-                0.0
-            );
+            // Bottom-right corner: from 0° to 90°
+            for j in 0..=corner_segments {
+                let t = j as f32 / corner_segments as f32;
+                let angle = t * std::f32::consts::PI * 0.5;
+                let offset = egui::Vec2::new(angle.cos() * rounding, angle.sin() * rounding);
+                let local_pos = corner_centers[2] + offset;
+                let rotated_pos = center + rotation * local_pos;
+                vertices.push(rotated_pos);
+            }
 
-            // Bottom-left corner
-            add_corner_vertices(
-                egui::Vec2::new(-half_size.x + corner_radius, half_size.y - corner_radius),
-                std::f32::consts::PI * 0.5
-            );
+            // Bottom-left corner: from 90° to 180°
+            for j in 0..=corner_segments {
+                let t = j as f32 / corner_segments as f32;
+                let angle = std::f32::consts::PI * 0.5 + t * std::f32::consts::PI * 0.5;
+                let offset = egui::Vec2::new(angle.cos() * rounding, angle.sin() * rounding);
+                let local_pos = corner_centers[3] + offset;
+                let rotated_pos = center + rotation * local_pos;
+                vertices.push(rotated_pos);
+            }
 
-            // Create mesh with center vertex for fan triangulation
-            let mut mesh = egui::Mesh::default();
-            mesh.colored_vertex(center, filled_color);
-
+            // Create mesh from vertices using triangle fan from center
+            let num_vertices = vertices.len();
             for v in &vertices {
                 mesh.colored_vertex(*v, filled_color);
             }
+            mesh.colored_vertex(center, filled_color); // center vertex
+            let center_idx = num_vertices as u32;
 
-            // Triangulate from center
-            let vertex_count = vertices.len();
-            for i in 0..vertex_count {
-                let next_i = (i + 1) % vertex_count;
-                mesh.add_triangle(0, (i + 1) as u32, (next_i + 1) as u32);
+            // Create triangles
+            for i in 0..num_vertices {
+                let next_i = (i + 1) % num_vertices;
+                mesh.add_triangle(i as u32, next_i as u32, center_idx);
             }
 
             ui.painter().add(egui::Shape::mesh(mesh));
 
-            // Draw stroke (outline) - use the same vertices for consistent shape
+            // Draw stroke for rotated rectangle with rounded corners
             let stroke_color = get_strike_color(filled_color, self.dark_mode);
             for i in 0..vertices.len() {
                 let next_i = (i + 1) % vertices.len();
                 ui.painter().line_segment(
                     [vertices[i], vertices[next_i]],
-                    egui::Stroke::new(self.stroke_width, stroke_color)
+                    Stroke {
+                        width: self.stroke_width,
+                        color: stroke_color,
+                    },
                 );
             }
 
-            // Draw text at center with rotation using Shape::Text
+            // Draw text with rotation using TextShape
             match &self.layout {
                 KeyTextsLayout::TopBottom(top_bottom) => {
-                    // For top/bottom layout, use two separate text shapes
-                    // Calculate rotated offsets for proper alignment
-                    let rotation_transform = Rot2::from_angle(self.rotation);
-                    let top_offset = rotation_transform * egui::Vec2::new(0.0, -7.5);
-                    let bottom_offset = rotation_transform * egui::Vec2::new(0.0, 7.5);
-
-                    let mut top_shape = egui::Shape::text(
-                        &ui.fonts(),
-                        center + top_offset,
-                        Align2::CENTER_CENTER,
-                        &top_bottom.0,
+                    // Create galleys for text
+                    let top_galley = ui.painter().layout_no_wrap(
+                        top_bottom.0.clone(),
                         font_id.clone(),
                         text_color,
                     );
-                    if let egui::Shape::Text(ref mut ts) = top_shape {
-                        ts.angle = self.rotation;
-                    }
-                    ui.painter().add(top_shape);
-
-                    let mut bottom_shape = egui::Shape::text(
-                        &ui.fonts(),
-                        center + bottom_offset,
-                        Align2::CENTER_CENTER,
-                        &top_bottom.1,
+                    let bottom_galley = ui.painter().layout_no_wrap(
+                        top_bottom.1.clone(),
                         font_id.clone(),
                         text_color,
                     );
-                    if let egui::Shape::Text(ref mut ts) = bottom_shape {
-                        ts.angle = self.rotation;
-                    }
-                    ui.painter().add(bottom_shape);
+
+                    // Calculate text positions in local space
+                    let top_offset = egui::Vec2::new(0.0, -7.5);
+                    let bottom_offset = egui::Vec2::new(0.0, 7.5);
+
+                    // Rotate the offset vectors
+                    let rotated_top_offset = rotation * top_offset;
+                    let rotated_bottom_offset = rotation * bottom_offset;
+
+                    // Calculate final positions (center of each text)
+                    let top_center = center + rotated_top_offset;
+                    let bottom_center = center + rotated_bottom_offset;
+
+                    // Draw rotated text using TextShape
+                    let top_pos = egui::Pos2::new(
+                        top_center.x - top_galley.size().x * 0.5,
+                        top_center.y - top_galley.size().y * 0.5
+                    );
+                    ui.painter().add(egui::epaint::TextShape::new(
+                        top_pos,
+                        top_galley,
+                        text_color,
+                    ).with_angle(self.rotation));
+
+                    let bottom_pos = egui::Pos2::new(
+                        bottom_center.x - bottom_galley.size().x * 0.5,
+                        bottom_center.y - bottom_galley.size().y * 0.5
+                    );
+                    ui.painter().add(egui::epaint::TextShape::new(
+                        bottom_pos,
+                        bottom_galley,
+                        text_color,
+                    ).with_angle(self.rotation));
                 }
                 KeyTextsLayout::Center1(text) => {
-                    // For single text, rotate it
-                    let mut text_shape = egui::Shape::text(
-                        &ui.fonts(),
-                        center,
-                        Align2::CENTER_CENTER,
-                        text,
+                    let galley = ui.painter().layout_no_wrap(
+                        text.clone(),
                         font_id.clone(),
                         text_color,
                     );
-                    if let egui::Shape::Text(ref mut ts) = text_shape {
-                        ts.angle = self.rotation;
-                    }
-                    ui.painter().add(text_shape);
+
+                    // Draw rotated text using TextShape
+                    let text_pos = egui::Pos2::new(
+                        center.x - galley.size().x * 0.5,
+                        center.y - galley.size().y * 0.5
+                    );
+                    ui.painter().add(egui::epaint::TextShape::new(
+                        text_pos,
+                        galley,
+                        text_color,
+                    ).with_angle(self.rotation));
                 }
             }
         } else {
@@ -253,6 +304,7 @@ impl KeyBox {
                     width: self.stroke_width,
                     color: get_strike_color(filled_color, self.dark_mode),
                 },
+                egui::epaint::StrokeKind::Middle,
             );
         }
 
@@ -279,38 +331,27 @@ impl KeyBox {
             };
 
             if should_show_tooltip {
-                egui::show_tooltip_at_pointer(
-                    ui.ctx(),
-                    egui::Id::new(format!("key_hover_{:?}", self.key)),
-                    |ui| {
-                        // Remove background and border
-                        ui.visuals_mut().window_fill = Color32::TRANSPARENT;
-                        ui.visuals_mut().window_stroke = egui::Stroke::NONE;
+                // Position tooltip above the cursor (5 pixels above)
+                let tooltip_pos = egui::Pos2::new(pointer_pos.x, pointer_pos.y - 5.0);
 
-                        // Different shadow for dark mode and light mode
-                        ui.style_mut().visuals.window_shadow = if self.dark_mode {
-                            // Dark mode shadow
-                            egui::epaint::Shadow {
-                                extrusion: 8.0,
-                                color: Color32::from_black_alpha(100),
-                            }
-                        } else {
-                            // Light mode shadow
-                            egui::epaint::Shadow {
-                                extrusion: 8.0,
-                                color: Color32::from_black_alpha(40),
-                            }
-                        };
-
-                        // Display number with appropriate color for visibility
-                        let tooltip_text_color = if self.dark_mode {
-                            Color32::from_rgb(220, 220, 220)  // 暗黑模式：亮灰色
-                        } else {
-                            Color32::from_rgb(50, 50, 50)  // 浅色模式：深灰色
-                        };
-                        ui.label(RichText::new(format!("{}", self.press_times)).color(tooltip_text_color));
-                    }
-                );
+                // Use the new Tooltip API for egui 0.33
+                egui::Area::new(egui::Id::new(format!("key_hover_{:?}", self.key)))
+                    .pivot(egui::Align2::CENTER_BOTTOM)
+                    .fixed_pos(tooltip_pos)
+                    .order(egui::Order::Foreground)  // Use Foreground order so dropdowns (Tooltip order) appear above
+                    .show(ui.ctx(), |ui| {
+                        egui::Frame::popup(ui.style()).show(ui, |ui| {
+                            // Display number with appropriate color for visibility
+                            let tooltip_text_color = if self.dark_mode {
+                                Color32::from_rgb(220, 220, 220)  // 暗黑模式：亮灰色
+                            } else {
+                                Color32::from_rgb(50, 50, 50)  // 浅色模式：深灰色
+                            };
+                            // Use wrap_mode to prevent text wrapping
+                            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                            ui.label(RichText::new(format!("{}", self.press_times)).color(tooltip_text_color));
+                        });
+                    });
             }
         }
     }
