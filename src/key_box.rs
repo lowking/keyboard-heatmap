@@ -21,6 +21,8 @@ pub struct KeyBox {
     key: rdev::Key,
     press_times: u32,
     hue: f32,
+    rotation: f32, // rotation angle in radians
+    offset: Vec2,  // position offset for alignment after rotation
 }
 
 impl KeyBox {
@@ -39,54 +41,208 @@ impl KeyBox {
             key,
             press_times,
             hue,
+            rotation: 0.0,
+            offset: Vec2::ZERO,
         }
+    }
+
+    pub fn with_rotation(mut self, rotation: f32) -> Self {
+        self.rotation = rotation;
+        self
+    }
+
+    pub fn with_rotation_and_offset(mut self, rotation: f32, offset: Vec2) -> Self {
+        self.rotation = rotation;
+        self.offset = offset;
+        self
+    }
+
+    pub fn with_offset(mut self, offset: Vec2) -> Self {
+        self.offset = offset;
+        self
     }
 }
 impl KeyBox {
     pub fn ui(&mut self, ui: &mut Ui) {
-        let (mut rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
+        let (rect, resp) = ui.allocate_exact_size(self.size, Sense::hover());
         let filled_color = get_color(self.hue, self.press_times * 32 / (AVERAGE_TIMES.load(Ordering::Relaxed) as u32));
-        ui.painter().rect_filled(rect, self.rounding, filled_color);
-        match &self.layout {
-            KeyTextsLayout::TopBottom(top_bottom) => {
-                ui.painter().text(
-                    rect.center(),
-                    Align2::CENTER_BOTTOM,
-                    top_bottom.0.clone(),
-                    egui::FontId::monospace(13.),
-                    Color32::from_rgb(32, 5, 64),
-                );
-                ui.painter().text(
-                    rect.center(),
-                    Align2::CENTER_TOP,
-                    top_bottom.1.clone(),
-                    egui::FontId::monospace(13.),
-                    Color32::from_rgb(32, 5, 64),
+
+        if self.rotation != 0.0 {
+            // Draw rotated key with rounded corners using mesh
+            let center = rect.center() + self.offset;
+            let rotation = Rot2::from_angle(self.rotation);
+            let half_size = self.size * 0.5;
+            let corner_radius = self.rounding;
+            let segments_per_corner = 8;
+
+            // Generate all vertices for the rounded rectangle in local coordinates,
+            // then rotate them around the center
+            let mut vertices = Vec::new();
+
+            // Helper to add corner arc vertices in local space
+            let mut add_corner_vertices = |corner_local: egui::Vec2, start_angle: f32| {
+                for i in 0..=segments_per_corner {
+                    let angle = start_angle + (i as f32 / segments_per_corner as f32) * std::f32::consts::PI * 0.5;
+                    let arc_offset = egui::Vec2::new(angle.cos(), angle.sin()) * corner_radius;
+                    let local_point = corner_local + arc_offset;
+                    // Rotate the local point and translate to world space
+                    let world_point = center + rotation * local_point;
+                    vertices.push(world_point);
+                }
+            };
+
+            // Top-left corner (local coordinates)
+            add_corner_vertices(
+                egui::Vec2::new(-half_size.x + corner_radius, -half_size.y + corner_radius),
+                std::f32::consts::PI
+            );
+
+            // Top-right corner
+            add_corner_vertices(
+                egui::Vec2::new(half_size.x - corner_radius, -half_size.y + corner_radius),
+                -std::f32::consts::PI * 0.5
+            );
+
+            // Bottom-right corner
+            add_corner_vertices(
+                egui::Vec2::new(half_size.x - corner_radius, half_size.y - corner_radius),
+                0.0
+            );
+
+            // Bottom-left corner
+            add_corner_vertices(
+                egui::Vec2::new(-half_size.x + corner_radius, half_size.y - corner_radius),
+                std::f32::consts::PI * 0.5
+            );
+
+            // Create mesh with center vertex for fan triangulation
+            let mut mesh = egui::Mesh::default();
+            mesh.colored_vertex(center, filled_color);
+
+            for v in &vertices {
+                mesh.colored_vertex(*v, filled_color);
+            }
+
+            // Triangulate from center
+            let vertex_count = vertices.len();
+            for i in 0..vertex_count {
+                let next_i = (i + 1) % vertex_count;
+                mesh.add_triangle(0, (i + 1) as u32, (next_i + 1) as u32);
+            }
+
+            ui.painter().add(egui::Shape::mesh(mesh));
+
+            // Draw stroke (outline) - use the same vertices for consistent shape
+            let stroke_color = get_strike_color(filled_color);
+            for i in 0..vertices.len() {
+                let next_i = (i + 1) % vertices.len();
+                ui.painter().line_segment(
+                    [vertices[i], vertices[next_i]],
+                    egui::Stroke::new(self.stroke_width, stroke_color)
                 );
             }
-            KeyTextsLayout::Center1(text) => {
-                ui.painter().text(
-                    rect.center(),
-                    Align2::CENTER_CENTER,
-                    text,
-                    egui::FontId::monospace(13.),
-                    Color32::from_rgb(32, 5, 64),
+
+            // Draw text at center
+            match &self.layout {
+                KeyTextsLayout::TopBottom(top_bottom) => {
+                    ui.painter().text(
+                        center,
+                        Align2::CENTER_BOTTOM,
+                        top_bottom.0.clone(),
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                    ui.painter().text(
+                        center,
+                        Align2::CENTER_TOP,
+                        top_bottom.1.clone(),
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                }
+                KeyTextsLayout::Center1(text) => {
+                    ui.painter().text(
+                        center,
+                        Align2::CENTER_CENTER,
+                        text,
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                }
+            }
+        } else {
+            // Draw normal non-rotated key
+            let draw_rect = rect.translate(self.offset);
+            ui.painter().rect_filled(draw_rect, self.rounding, filled_color);
+            match &self.layout {
+                KeyTextsLayout::TopBottom(top_bottom) => {
+                    ui.painter().text(
+                        draw_rect.center(),
+                        Align2::CENTER_BOTTOM,
+                        top_bottom.0.clone(),
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                    ui.painter().text(
+                        draw_rect.center(),
+                        Align2::CENTER_TOP,
+                        top_bottom.1.clone(),
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                }
+                KeyTextsLayout::Center1(text) => {
+                    ui.painter().text(
+                        draw_rect.center(),
+                        Align2::CENTER_CENTER,
+                        text,
+                        egui::FontId::monospace(13.),
+                        Color32::from_rgb(32, 5, 64),
+                    );
+                }
+            }
+
+            ui.painter().rect_stroke(
+                draw_rect,
+                self.rounding,
+                Stroke {
+                    width: self.stroke_width,
+                    color: get_strike_color(filled_color),
+                },
+            );
+        }
+
+        // Hover tooltip - all keys use pointer-following tooltips
+        if let Some(pointer_pos) = ui.ctx().pointer_hover_pos() {
+            let should_show_tooltip = if self.rotation != 0.0 {
+                // For rotated keys, check if pointer is inside the rotated rectangle
+                let center = rect.center() + self.offset;
+                let half_size = self.size * 0.5;
+                let rotation = Rot2::from_angle(self.rotation);
+
+                // Transform pointer position to local space (inverse rotation)
+                let local_pos = rotation.inverse() * (pointer_pos - center);
+
+                // Check if local position is inside the rectangle
+                local_pos.x.abs() <= half_size.x && local_pos.y.abs() <= half_size.y
+            } else if self.offset != Vec2::ZERO {
+                // For non-rotated keys with offset, check if pointer is inside the translated rectangle
+                let draw_rect = rect.translate(self.offset);
+                draw_rect.contains(pointer_pos)
+            } else {
+                // For keys with no rotation or offset, check the original rect
+                rect.contains(pointer_pos)
+            };
+
+            if should_show_tooltip {
+                egui::show_tooltip_at_pointer(
+                    ui.ctx(),
+                    egui::Id::new(format!("key_hover_{:?}", self.key)),
+                    |ui| {
+                        ui.label(RichText::new(format!("{}", self.press_times)));
+                    }
                 );
             }
         }
-
-        ui.painter().rect_stroke(
-            rect,
-            self.rounding,
-            Stroke {
-                width: self.stroke_width,
-                color: get_strike_color(filled_color),
-            },
-        );
-
-        let hover_ui = |ui: &mut Ui| {
-            ui.label(RichText::new(format!("{}", self.press_times)));
-        };
-        resp.on_hover_ui(hover_ui);
     }
 }

@@ -114,23 +114,23 @@ fn get_alice_rotation_config() -> HashMap<(usize, usize, &'static str), (f32, f3
 
     // Format: config.insert((row, col, "label"), (rotation, offset_x, offset_y));
     // Positive rotation values rotate clockwise, negative values rotate counter-clockwise
-    // Example: (0.14, 0.0, 0.0) means 0.14 radians (≈ 7°) with no offset
+    // Example: (0.12, 0.0, 0.0) means 0.12 radians (≈ 7°) with no offset
 
     // Row 0 - Number row with Esc (15 keys total)
     config.insert((0, 0, "Esc"), (0.0, 0.0, 0.0));
-    config.insert((0, 1, "~`"), (0.0, 0.0, 0.0));
+    config.insert((0, 1, "`~"), (0.0, 0.0, 0.0));
     config.insert((0, 2, "1!"), (0.0, 0.0, 0.0));
-    config.insert((0, 3, "2@"), (0.0, 0.0, -10.0));
-    config.insert((0, 4, "3#"), (0.14, -10.0, 0.0));
-    config.insert((0, 5, "4$"), (0.14, -10.0, 8.0));
-    config.insert((0, 6, "5%"), (0.14, -10.0, 16.0));
-    config.insert((0, 7, "6^"), (0.14, -10.0, 24.0));
+    config.insert((0, 3, "2@"), (0.12, 0.0, 0.0));
+    config.insert((0, 4, "3#"), (0.12, 0.0, 0.0));
+    config.insert((0, 5, "4$"), (0.12, 0.0, 0.0));
+    config.insert((0, 6, "5%"), (0.12, 0.0, 0.0));
+    config.insert((0, 7, "6^"), (0.12, 0.0, 0.0));
 
-    config.insert((0, 8, "7&"), (-0.14, 10.0, 19.0));
-    config.insert((0, 9, "8*"), (-0.14, 10.0, 11.0));
-    config.insert((0, 10, "9("), (-0.14, 10.0, 3.0));
-    config.insert((0, 11, "0)"), (-0.14, 10.0, -5.0));
-    config.insert((0, 12, "_-"), (0.0, 0.0, -10.0));
+    config.insert((0, 8, "7&"), (-0.12, 0.0, 0.0));
+    config.insert((0, 9, "8*"), (-0.12, 0.0, 0.0));
+    config.insert((0, 10, "9("), (-0.12, 0.0, 0.0));
+    config.insert((0, 11, "0)"), (-0.12, 0.0, 0.0));
+    config.insert((0, 12, "-_"), (0.0, 0.0, 0.0));
     config.insert((0, 13, "=+"), (0.0, 0.0, 0.0));
     config.insert((0, 14, "Back"), (0.0, 0.0, 0.0));
 
@@ -139,55 +139,55 @@ fn get_alice_rotation_config() -> HashMap<(usize, usize, &'static str), (f32, f3
     config.insert((1, 1, "Tab"), (0.0, 0.0, 0.0));
     config.insert((1, 2, "Q"), (0.0, 0.0, 0.0));
 
-    config.insert((1, 3, "W"), (0.14, 0.0, -5.0));
-    config.insert((1, 4, "E"), (0.14, 0.0, 3.0));
-    config.insert((1, 5, "R"), (0.14, 0.0, 11.0));
-    config.insert((1, 6, "T"), (0.14, 0.0, 19.0));
+    config.insert((1, 3, "W"), (0.12, 0.0, 0.0));
+    config.insert((1, 4, "E"), (0.12, 0.0, 0.0));
+    config.insert((1, 5, "R"), (0.12, 0.0, 0.0));
+    config.insert((1, 6, "T"), (0.12, 0.0, 0.0));
 
-    config.insert((1, 7, "Y"), (-0.14, 7.0, 22.0));
-    config.insert((1, 8, "U"), (-0.14, 7.0, 14.0));
-    config.insert((1, 9, "I"), (-0.14, 7.0, 6.0));
-    config.insert((1, 10, "O"), (-0.14, 7.0, -2.0));
+    config.insert((1, 7, "Y"), (-0.12, 0.0, 0.0));
+    config.insert((1, 8, "U"), (-0.12, 0.0, 0.0));
+    config.insert((1, 9, "I"), (-0.12, 0.0, 0.0));
+    config.insert((1, 10, "O"), (-0.12, 0.0, 0.0));
 
-    config.insert((1, 11, "P"), (0.0, 0.0, -8.0));
-    config.insert((1, 12, "{["), (0.0, 0.0, 0.0));
-    config.insert((1, 13, "}]"), (0.0, 0.0, 0.0));
-    config.insert((1, 14, "|\\"), (0.0, 0.0, 0.0));
+    config.insert((1, 11, "P"), (0.0, 0.0, 0.0));
+    config.insert((1, 12, "[{"), (0.0, 0.0, 0.0));
+    config.insert((1, 13, "]}"), (0.0, 0.0, 0.0));
+    config.insert((1, 14, "\\|"), (0.0, 0.0, 0.0));
 
     // Row 2 - ASDF row (14 keys total)
     config.insert((2, 0, "Esc"), (0.0, 0.0, 0.0));
     config.insert((2, 1, "Caps\nLock"), (0.0, 0.0, 0.0));
     config.insert((2, 2, "A"), (0.0, 0.0, 0.0));
 
-    config.insert((2, 3, "S"), (0.14, 0.0, -3.0));
-    config.insert((2, 4, "D"), (0.14, 0.0, 5.0));
-    config.insert((2, 5, "F"), (0.14, 0.0, 13.0));
-    config.insert((2, 6, "G"), (0.14, 0.0, 21.0));
+    config.insert((2, 3, "S"), (0.12, 0.0, 0.0));
+    config.insert((2, 4, "D"), (0.12, 0.0, 0.0));
+    config.insert((2, 5, "F"), (0.12, 0.0, 0.0));
+    config.insert((2, 6, "G"), (0.12, 0.0, 0.0));
 
-    config.insert((2, 7, "H"), (-0.14, 6.0, 21.0));
-    config.insert((2, 8, "J"), (-0.14, 6.0, 13.0));
-    config.insert((2, 9, "K"), (-0.14, 6.0, 5.0));
-    config.insert((2, 10, "L"), (-0.14, 6.0, -3.0));
+    config.insert((2, 7, "H"), (-0.12, 0.0, 0.0));
+    config.insert((2, 8, "J"), (-0.12, 0.0, 0.0));
+    config.insert((2, 9, "K"), (-0.12, 0.0, 0.0));
+    config.insert((2, 10, "L"), (-0.12, 0.0, 0.0));
 
-    config.insert((2, 11, ";:"), (0.0, 0.0, 0.0));
-    config.insert((2, 12, "'\""), (0.0, 0.0, 0.0));
+    config.insert((2, 11, ":;"), (0.0, 0.0, 0.0));
+    config.insert((2, 12, "\"'"), (0.0, 0.0, 0.0));
     config.insert((2, 13, "Enter"), (0.0, 0.0, 0.0));
 
     // Row 3 - ZXCV row (14 keys total)
     config.insert((3, 0, "Shift"), (0.0, 0.0, 0.0));
     config.insert((3, 1, "Z"), (0.0, 0.0, 0.0));
-    config.insert((3, 2, "X"), (0.14, 0.0, 1.0));
-    config.insert((3, 3, "C"), (0.14, 0.0, 9.0));
-    config.insert((3, 4, "V"), (0.14, 0.0, 17.0));
-    config.insert((3, 5, "B1"), (0.14, 0.0, 25.0));
+    config.insert((3, 2, "X"), (0.12, 0.0, 0.0));
+    config.insert((3, 3, "C"), (0.12, 0.0, 0.0));
+    config.insert((3, 4, "V"), (0.12, 0.0, 0.0));
+    config.insert((3, 5, "B1"), (0.12, 0.0, 0.0));
 
-    config.insert((3, 6, "B2"), (-0.14, 0.0, 25.0));
-    config.insert((3, 7, "N"), (-0.14, 0.0, 17.0));
-    config.insert((3, 8, "M"), (-0.14, 0.0, 9.0));
-    config.insert((3, 9, ",<"), (-0.14, 0.0, 1.0));
+    config.insert((3, 6, "B2"), (-0.12, 0.0, 0.0));
+    config.insert((3, 7, "N"), (-0.12, 0.0, 0.0));
+    config.insert((3, 8, "M"), (-0.12, 0.0, 0.0));
+    config.insert((3, 9, ",<"), (-0.12, 0.0, 0.0));
 
     config.insert((3, 10, ".>"), (0.0, 0.0, 0.0));
-    config.insert((3, 11, "/?"), (0.0, 0.0, 0.0));
+    config.insert((3, 11, "?/"), (0.0, 0.0, 0.0));
     config.insert((3, 12, "↑"), (0.0, 0.0, 0.0));
     config.insert((3, 13, "Shift"), (0.0, 0.0, 0.0));
 
@@ -195,11 +195,11 @@ fn get_alice_rotation_config() -> HashMap<(usize, usize, &'static str), (f32, f3
     config.insert((4, 0, "Ctrl"), (0.0, 0.0, 0.0));
     config.insert((4, 1, "Fn"), (0.0, 0.0, 0.0));
 
-    config.insert((4, 2, "Cmd"), (0.14, 9.0, 7.0));
-    config.insert((4, 3, "Option"), (0.14, 9.0, 21.0));
+    config.insert((4, 2, "Cmd"), (0.12, 0.0, 0.0));
+    config.insert((4, 3, "Option"), (0.12, 0.0, 0.0));
 
-    config.insert((4, 4, " "), (-0.14, -15.0, 18.0));
-    config.insert((4, 5, "Win"), (-0.14, -15.0, 1.0));
+    config.insert((4, 4, " "), (-0.12, 0.0, 0.0));
+    config.insert((4, 5, "Win"), (-0.12, 0.0, 0.0));
     config.insert((4, 6, "←"), (0.0, 0.0, 0.0));
     config.insert((4, 7, "↓"), (0.0, 0.0, 0.0));
     config.insert((4, 8, "→"), (0.0, 0.0, 0.0));
@@ -636,16 +636,14 @@ impl Keyboard {
         // Row 0 - Number row with Esc
         ui.horizontal(|ui| {
             ui.add_space(left_divide_size * 2.);
-            let (rotation, offset) = get_config(0, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", get_rotation(0, 0, "Esc"), ui);
 
             ui.add_space(left_divide_size);
 
             for (idx, key_pair) in NUM_KEY_LINE_PAIRS.iter().enumerate() {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
-                let (rotation, offset) = get_config(0, idx + 1, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, get_rotation(0, idx + 1, &label), ui,
                 );
                 if key_pair.2 == rdev::Key::Num2 || key_pair.2 == rdev::Key::Num6 || key_pair.2 == rdev::Key::Num0 {
                     ui.add_space(middle_divide_size);
@@ -653,14 +651,12 @@ impl Keyboard {
                 }
             }
 
-            let (rotation, offset) = get_config(0, 14, "Back");
             self.draw_single_label_key_rotated(
                 map,
                 Vec2 { x: 110., y: 50. },
                 rdev::Key::Backspace,
                 "Back",
-                rotation,
-                offset,
+                get_rotation(0, 14, "Back"),
                 ui,
             );
         });
@@ -669,17 +665,14 @@ impl Keyboard {
         // Row 1 - QWERTY row
         ui.horizontal(|ui| {
             ui.add_space(left_divide_size);
-            let (rotation, offset) = get_config(1, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", get_rotation(1, 0, "Esc"), ui);
 
             ui.add_space(left_divide_size);
 
-            let (rotation, offset) = get_config(1, 1, "Tab");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", get_rotation(1, 1, "Tab"), ui);
 
             for (idx, key_pair) in FIRST_ALPHA_LINE_PAIRS.iter().enumerate() {
-                let (rotation, offset) = get_config(1, idx + 2, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, get_rotation(1, idx + 2, key_pair.0), ui);
                 if key_pair.1 == rdev::Key::KeyQ {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -702,23 +695,20 @@ impl Keyboard {
             .enumerate()
             {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
-                let (rotation, offset) = get_config(1, idx + 12, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, get_rotation(1, idx + 12, &label), ui,
                 );
             }
 
             let key_pair = ("\\", "|", rdev::Key::BackSlash);
             let label = format!("{}{}", key_pair.1, key_pair.0);
-            let (rotation, offset) = get_config(1, 14, &label);
             self.draw_double_labels_key_rotated(
                 map,
                 Vec2 { x: 80., y: 50. },
                 key_pair.2,
                 key_pair.0,
                 key_pair.1,
-                rotation,
-                offset,
+                get_rotation(1, 14, &label),
                 ui,
             );
         });
@@ -726,25 +716,21 @@ impl Keyboard {
 
         // Row 2 - ASDF row
         ui.horizontal(|ui| {
-            let (rotation, offset) = get_config(2, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", get_rotation(2, 0, "Esc"), ui);
 
             ui.add_space(left_divide_size);
 
-            let (rotation, offset) = get_config(2, 1, "Caps\nLock");
             self.draw_single_label_key_rotated(
                 map,
                 Vec2 { x: 85., y: 50. },
                 rdev::Key::CapsLock,
                 "Caps\nLock",
-                rotation,
-                offset,
+                get_rotation(2, 1, "Caps\nLock"),
                 ui,
             );
 
             for (idx, key_pair) in SECOND_ALPHA_LINE_PAIRS.iter().enumerate() {
-                let (rotation, offset) = get_config(2, idx + 2, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, get_rotation(2, idx + 2, key_pair.0), ui);
                 if key_pair.1 == rdev::Key::KeyA {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -767,21 +753,18 @@ impl Keyboard {
             .enumerate()
             {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
-                let (rotation, offset) = get_config(2, idx + 11, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, get_rotation(2, idx + 11, &label), ui,
                 );
             }
 
             // enter
-            let (rotation, offset) = get_config(2, 13, "Enter");
             self.draw_single_label_key_rotated(
                 map,
                 Vec2 { x: 125., y: 50. },
                 rdev::Key::Return,
                 "Enter",
-                rotation,
-                offset,
+                get_rotation(2, 13, "Enter"),
                 ui,
             );
         });
@@ -791,20 +774,17 @@ impl Keyboard {
         ui.horizontal(|ui| {
             self.draw_empty_key(basic_size, ui);
 
-            let (rotation, offset) = get_config(3, 0, "Shift");
             self.draw_single_label_key_rotated(
                 map,
                 Vec2 { x: 118., y: 50. },
                 rdev::Key::ShiftLeft,
                 "Shift",
-                rotation,
-                offset,
+                get_rotation(3, 0, "Shift"),
                 ui,
             );
 
             for (idx, key_pair) in THIRD_ALPHA_LINE_PAIRS_ALICE.iter().enumerate() {
-                let (rotation, offset) = get_config(3, idx + 1, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, get_rotation(3, idx + 1, key_pair.0), ui);
                 if key_pair.1 == rdev::Key::KeyZ {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -824,20 +804,17 @@ impl Keyboard {
             .enumerate()
             {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
-                let (rotation, offset) = get_config(3, idx + 9, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, get_rotation(3, idx + 9, &label), ui,
                 );
                 if key_pair.2 == rdev::Key::Comma {
                     ui.add_space(middle_divide_size);
                 }
             }
 
-            let (rotation, offset) = get_config(3, 12, "↑");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::UpArrow, "↑", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::UpArrow, "↑", get_rotation(3, 12, "↑"), ui);
             // right shift
-            let (rotation, offset) = get_config(3, 13, "Shift");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 100., y: 50. }, rdev::Key::ShiftRight, "Shift", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 100., y: 50. }, rdev::Key::ShiftRight, "Shift", get_rotation(3, 13, "Shift"), ui);
         });
         ui.add_space(3.);
 
@@ -846,28 +823,19 @@ impl Keyboard {
             self.draw_empty_key(basic_size, ui);
 
             let ctrl_size = Vec2 { x: 65., y: 50. };
-            let (rotation, offset) = get_config(4, 0, "Ctrl");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", get_rotation(4, 0, "Ctrl"), ui);
 
-            let (rotation, offset) = get_config(4, 1, "Fn");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::Function, "Fn", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::Function, "Fn", get_rotation(4, 1, "Fn"), ui);
             ui.add_space(65.);
-            let (rotation, offset) = get_config(4, 2, "Cmd");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", rotation, offset, ui);
-            let (rotation, offset) = get_config(4, 3, "Option");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Option", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", get_rotation(4, 2, "Cmd"), ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Option", get_rotation(4, 3, "Option"), ui);
             ui.add_space(50.);
-            let (rotation, offset) = get_config(4, 4, " ");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", rotation, offset, ui);
-            let (rotation, offset) = get_config(4, 5, "Win");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::MetaLeft, "Win", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", get_rotation(4, 4, " "), ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::MetaLeft, "Win", get_rotation(4, 5, "Win"), ui);
             ui.add_space(35.);
-            let (rotation, offset) = get_config(4, 6, "←");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::LeftArrow, "←", rotation, offset, ui);
-            let (rotation, offset) = get_config(4, 7, "↓");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::DownArrow, "↓", rotation, offset, ui);
-            let (rotation, offset) = get_config(4, 8, "→");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::RightArrow, "→", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::LeftArrow, "←", get_rotation(4, 6, "←"), ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::DownArrow, "↓", get_rotation(4, 7, "↓"), ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::RightArrow, "→", get_rotation(4, 8, "→"), ui);
         });
     }
 
