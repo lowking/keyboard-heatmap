@@ -76,6 +76,7 @@ pub struct State {
     bold: bool,
     font_selector_open: bool,
     font_selector_just_opened: bool,
+    last_theme_check: std::time::Instant,
 }
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -98,30 +99,38 @@ impl eframe::App for KeyboardHeatmap {
         let mut state = state.lock().unwrap();
 
         // Get system theme preference from macOS only if not manually overridden
+        // Check only every 5 seconds to reduce CPU usage
         if !state.manual_theme_override {
-            #[cfg(target_os = "macos")]
-            let system_dark_mode = {
-                use std::process::Command;
-                if let Ok(output) = Command::new("defaults")
-                    .args(&["read", "-g", "AppleInterfaceStyle"])
-                    .output()
-                {
-                    String::from_utf8_lossy(&output.stdout).contains("Dark")
-                } else {
-                    false
-                }
-            };
-            #[cfg(not(target_os = "macos"))]
-            let system_dark_mode = false;
+            let now = std::time::Instant::now();
+            let should_check_theme = now.duration_since(state.last_theme_check).as_secs() >= 5;
 
-            // Auto-switch theme based on system preference
-            if system_dark_mode != state.dark_mode {
-                state.dark_mode = system_dark_mode;
-                // Change hue when theme changes
-                if state.dark_mode {
-                    state.hue = 0.0;  // Dark mode: red
-                } else {
-                    state.hue = 220. / 360.;  // Light mode: blue
+            if should_check_theme {
+                state.last_theme_check = now;
+
+                #[cfg(target_os = "macos")]
+                let system_dark_mode = {
+                    use std::process::Command;
+                    if let Ok(output) = Command::new("defaults")
+                        .args(&["read", "-g", "AppleInterfaceStyle"])
+                        .output()
+                    {
+                        String::from_utf8_lossy(&output.stdout).contains("Dark")
+                    } else {
+                        false
+                    }
+                };
+                #[cfg(not(target_os = "macos"))]
+                let system_dark_mode = false;
+
+                // Auto-switch theme based on system preference
+                if system_dark_mode != state.dark_mode {
+                    state.dark_mode = system_dark_mode;
+                    // Change hue when theme changes
+                    if state.dark_mode {
+                        state.hue = 0.0;  // Dark mode: red
+                    } else {
+                        state.hue = 220. / 360.;  // Light mode: blue
+                    }
                 }
             }
         }
@@ -133,8 +142,8 @@ impl eframe::App for KeyboardHeatmap {
             ctx.set_visuals(egui::Visuals::light());
         }
 
-        // Request continuous repaint to update colors even when in background
-        ctx.request_repaint();
+        // Request repaint at a reasonable rate (5 FPS) to save CPU
+        ctx.request_repaint_after(std::time::Duration::from_millis(200));
 
         let background_color = if state.dark_mode {
             Color32::from_rgb(0x3A, 0x38, 0x37)
@@ -527,6 +536,7 @@ pub fn setup_ui(cc: &CreationContext) -> Result<Box<dyn App>, Box<dyn std::error
         bold,
         font_selector_open: false,
         font_selector_just_opened: false,
+        last_theme_check: std::time::Instant::now(),
     }));
     let press_map = Arc::new(Mutex::new(PressTimesMap::new()));
 
