@@ -28,6 +28,8 @@ struct Settings {
     font_family: FontFamily,
     font_size: f32,
     bold: bool,
+    dark_mode: bool,
+    hue: f32,
 }
 
 fn get_settings_path() -> PathBuf {
@@ -44,6 +46,8 @@ fn save_settings(state: &State) -> Result<(), Box<dyn std::error::Error>> {
         font_family: state.font_family,
         font_size: state.font_size,
         bold: state.bold,
+        dark_mode: state.dark_mode,
+        hue: state.hue,
     };
     let json = serde_json::to_string_pretty(&settings)?;
     fs::write(get_settings_path(), json)?;
@@ -65,7 +69,6 @@ pub struct State {
     hue: f32,
     start_time: DateTime<chrono::Local>,
     dark_mode: bool,
-    manual_theme_override: bool,
     font_family: FontFamily,
     system_fonts: Vec<String>,
     font_search: String,
@@ -76,7 +79,6 @@ pub struct State {
     bold: bool,
     font_selector_open: bool,
     font_selector_just_opened: bool,
-    last_theme_check: std::time::Instant,
 }
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -97,43 +99,6 @@ impl eframe::App for KeyboardHeatmap {
             press_map: _,
         } = self;
         let mut state = state.lock().unwrap();
-
-        // Get system theme preference from macOS only if not manually overridden
-        // Check only every 5 seconds to reduce CPU usage
-        if !state.manual_theme_override {
-            let now = std::time::Instant::now();
-            let should_check_theme = now.duration_since(state.last_theme_check).as_secs() >= 5;
-
-            if should_check_theme {
-                state.last_theme_check = now;
-
-                #[cfg(target_os = "macos")]
-                let system_dark_mode = {
-                    use std::process::Command;
-                    if let Ok(output) = Command::new("defaults")
-                        .args(&["read", "-g", "AppleInterfaceStyle"])
-                        .output()
-                    {
-                        String::from_utf8_lossy(&output.stdout).contains("Dark")
-                    } else {
-                        false
-                    }
-                };
-                #[cfg(not(target_os = "macos"))]
-                let system_dark_mode = false;
-
-                // Auto-switch theme based on system preference
-                if system_dark_mode != state.dark_mode {
-                    state.dark_mode = system_dark_mode;
-                    // Change hue when theme changes
-                    if state.dark_mode {
-                        state.hue = 0.0;  // Dark mode: red
-                    } else {
-                        state.hue = 220. / 360.;  // Light mode: blue
-                    }
-                }
-            }
-        }
 
         // Apply theme
         if state.dark_mode {
@@ -435,7 +400,7 @@ impl eframe::App for KeyboardHeatmap {
 
                 ui.separator();
 
-                color::color_slider_1d(ui, &mut state.hue, |h| {
+                let color_response = color::color_slider_1d(ui, &mut state.hue, |h| {
                     HsvaGamma {
                         h,
                         s: 0.6,
@@ -445,10 +410,14 @@ impl eframe::App for KeyboardHeatmap {
                         .into()
                 });
 
+                // Save settings when color changes
+                if color_response.changed() {
+                    let _ = save_settings(&state);
+                }
+
                 // Dark mode toggle
                 let theme_text = if state.dark_mode { "☀ Light" } else { "🌙 Dark" };
                 if ui.button(theme_text).clicked() {
-                    state.manual_theme_override = true;
                     state.dark_mode = !state.dark_mode;
                     // Change hue when switching theme
                     if state.dark_mode {
@@ -458,6 +427,7 @@ impl eframe::App for KeyboardHeatmap {
                         // Light mode: blue (220/360)
                         state.hue = 220. / 360.;
                     }
+                    let _ = save_settings(&state);
                 }
             });
 
@@ -500,6 +470,12 @@ pub fn setup_ui(cc: &CreationContext) -> Result<Box<dyn App>, Box<dyn std::error
     let bold = saved_settings.as_ref()
         .map(|s| s.bold)
         .unwrap_or(false);
+    let dark_mode = saved_settings.as_ref()
+        .map(|s| s.dark_mode)
+        .unwrap_or(false);
+    let hue = saved_settings.as_ref()
+        .map(|s| s.hue)
+        .unwrap_or(220. / 360.);
 
     // Load font
     if let Some(font_data) = font_loader::load_font_data(&default_font) {
@@ -522,10 +498,9 @@ pub fn setup_ui(cc: &CreationContext) -> Result<Box<dyn App>, Box<dyn std::error
 
     let state = Arc::new(Mutex::new(State {
         keyboard_type: KeyboardType::QwertyAliceWeikav,
-        hue: 220. / 360.,
+        hue,
         start_time: chrono::Local::now(),
-        dark_mode: false,
-        manual_theme_override: false,
+        dark_mode,
         font_family,
         system_fonts: system_fonts.clone(),
         font_search: String::new(),
@@ -536,7 +511,6 @@ pub fn setup_ui(cc: &CreationContext) -> Result<Box<dyn App>, Box<dyn std::error
         bold,
         font_selector_open: false,
         font_selector_just_opened: false,
-        last_theme_check: std::time::Instant::now(),
     }));
     let press_map = Arc::new(Mutex::new(PressTimesMap::new()));
 
