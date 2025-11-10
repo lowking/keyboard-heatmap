@@ -226,24 +226,29 @@ impl Keyboard {
 }
 impl Keyboard {
     pub fn draw(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui) {
+        // Read AVERAGE_TIMES once for all keys
+        use std::sync::atomic::Ordering;
+        use crate::press_time_map::AVERAGE_TIMES;
+        let average_times = AVERAGE_TIMES.load(Ordering::Relaxed) as u32;
+
         match self.keyboard_type {
-            KeyboardType::QwertyMac => self.draw_mac_keyboard(map, ui),
-            KeyboardType::Qwerty87 => self.draw_87_keyboard(map, ui),
-            KeyboardType::QwertyAliceWeikav => self.draw_alice_keyboard(map, ui),
+            KeyboardType::QwertyMac => self.draw_mac_keyboard(map, ui, average_times),
+            KeyboardType::Qwerty87 => self.draw_87_keyboard(map, ui, average_times),
+            KeyboardType::QwertyAliceWeikav => self.draw_alice_keyboard(map, ui, average_times),
         }
     }
 
-    fn draw_mac_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui) {
+    fn draw_mac_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui, average_times: u32) {
         let basic_size = Vec2 { x: 50., y: 50. };
         // 1st line
         ui.horizontal(|ui| {
-            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Escape, "Esc", ui);
+            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Escape, "Esc", ui, average_times);
 
             for key_pair in FN_KEYS_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui)
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times)
             }
 
-            self.draw_single_label_key(map, basic_size, rdev::Key::Unknown(0), "Power", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Unknown(0), "Power", ui, average_times);
         });
         ui.add_space(3.);
 
@@ -251,7 +256,7 @@ impl Keyboard {
         ui.horizontal(|ui| {
             for key_pair in NUM_KEY_LINE_PAIRS.iter() {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -259,18 +264,16 @@ impl Keyboard {
                 map,
                 Vec2 { x: 70., y: 50. },
                 rdev::Key::Backspace,
-                "Back",
-                ui,
-            );
+                "Back", ui, average_times);
         });
         ui.add_space(3.);
 
         // tab line
         ui.horizontal(|ui| {
-            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", ui);
+            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", ui, average_times);
 
             for key_pair in FIRST_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
 
             for key_pair in [
@@ -279,7 +282,7 @@ impl Keyboard {
                 ("\\", "|", rdev::Key::BackSlash),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
         });
@@ -291,12 +294,10 @@ impl Keyboard {
                 map,
                 Vec2 { x: 85., y: 50. },
                 rdev::Key::CapsLock,
-                "Caps\nLock",
-                ui,
-            );
+                "Caps\nLock", ui, average_times);
 
             for key_pair in SECOND_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
 
             for key_pair in [
@@ -304,7 +305,7 @@ impl Keyboard {
                 ("\"", "'", rdev::Key::Quote),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -313,9 +314,7 @@ impl Keyboard {
                 map,
                 Vec2 { x: 93., y: 50. },
                 rdev::Key::Return,
-                "Enter",
-                ui,
-            );
+                "Enter", ui, average_times);
         });
         ui.add_space(3.);
 
@@ -325,12 +324,10 @@ impl Keyboard {
                 map,
                 Vec2 { x: 118., y: 50. },
                 rdev::Key::ShiftLeft,
-                "Shift",
-                ui,
-            );
+                "Shift", ui, average_times);
 
             for key_pair in THIRD_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui)
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times)
             }
 
             for key_pair in [
@@ -339,7 +336,7 @@ impl Keyboard {
                 ("?", "/", rdev::Key::Slash),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -348,33 +345,27 @@ impl Keyboard {
                 map,
                 Vec2 { x: 118., y: 50. },
                 rdev::Key::ShiftRight,
-                "Shift",
-                ui,
-            );
+                "Shift", ui, average_times);
         });
         ui.add_space(3.);
 
         // last line
         ui.horizontal(|ui| {
-            self.draw_single_label_key(map, basic_size, rdev::Key::Function, "Fn", ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::ControlLeft, "Ctrl", ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::Alt, "Opt", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Function, "Fn", ui, average_times);
+            self.draw_single_label_key(map, basic_size, rdev::Key::ControlLeft, "Ctrl", ui, average_times);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Alt, "Opt", ui, average_times);
             self.draw_single_label_key(
                 map,
                 Vec2 { x: 61., y: 50. },
                 rdev::Key::MetaLeft,
-                "Cmd",
-                ui,
-            );
-            self.draw_single_label_key(map, Vec2 { x: 280., y: 50. }, rdev::Key::Space, " ", ui);
+                "Cmd", ui, average_times);
+            self.draw_single_label_key(map, Vec2 { x: 280., y: 50. }, rdev::Key::Space, " ", ui, average_times);
             self.draw_single_label_key(
                 map,
                 Vec2 { x: 61., y: 50. },
                 rdev::Key::MetaRight,
-                "Cmd",
-                ui,
-            );
-            self.draw_single_label_key(map, basic_size, rdev::Key::AltGr, "Opt", ui);
+                "Cmd", ui, average_times);
+            self.draw_single_label_key(map, basic_size, rdev::Key::AltGr, "Opt", ui, average_times);
 
             let left_times = map.get_key_times(rdev::Key::LeftArrow);
             let mut left_key = KeyBox::new(
@@ -391,7 +382,7 @@ impl Keyboard {
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 24. }, Sense::hover());
                 ui.painter().rect_filled(rect, 0., Color32::TRANSPARENT);
-                left_key.ui(ui);
+                left_key.ui(ui, average_times);
             });
 
             let up_times = map.get_key_times(rdev::Key::UpArrow);
@@ -419,8 +410,8 @@ impl Keyboard {
                 self.bold,
             );
             ui.vertical(|ui| {
-                up_key.ui(ui);
-                down_key.ui(ui);
+                up_key.ui(ui, average_times);
+                down_key.ui(ui, average_times);
             });
 
             // ->
@@ -439,21 +430,21 @@ impl Keyboard {
             ui.vertical(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2 { x: 50., y: 25. }, Sense::hover());
                 ui.painter().rect_filled(rect, 0., Color32::TRANSPARENT);
-                right_key.ui(ui);
+                right_key.ui(ui, average_times);
             });
         });
     }
 
-    fn draw_87_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui) {
+    fn draw_87_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui, average_times: u32) {
         let basic_size = Vec2 { x: 50., y: 50. };
         // 1st line
         ui.horizontal(|ui| {
-            self.draw_single_label_key(map, basic_size, rdev::Key::Escape, "Esc", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::Escape, "Esc", ui, average_times);
 
             self.draw_empty_key(basic_size, ui);
 
             for key_pair in FN_KEYS_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
                 if key_pair.1 == rdev::Key::F4 || key_pair.1 == rdev::Key::F8 {
                     ui.add_space(25.);
                 }
@@ -466,7 +457,7 @@ impl Keyboard {
                 ("ScrLk", rdev::Key::ScrollLock),
                 ("Pause", rdev::Key::Pause),
             ] {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
         });
         ui.add_space(3.);
@@ -475,7 +466,7 @@ impl Keyboard {
         ui.horizontal(|ui| {
             for key_pair in NUM_KEY_LINE_PAIRS.iter() {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -483,9 +474,7 @@ impl Keyboard {
                 map,
                 Vec2 { x: 100., y: 50. },
                 rdev::Key::Backspace,
-                "Back",
-                ui,
-            );
+                "Back", ui, average_times);
 
             ui.add_space(SECTION_SPACE);
 
@@ -494,17 +483,17 @@ impl Keyboard {
                 ("Home", rdev::Key::Home),
                 ("PgUp", rdev::Key::PageUp),
             ] {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
         });
         ui.add_space(3.);
 
         // tab line
         ui.horizontal(|ui| {
-            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", ui);
+            self.draw_single_label_key(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", ui, average_times);
 
             for key_pair in FIRST_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
 
             for key_pair in [
@@ -512,7 +501,7 @@ impl Keyboard {
                 ("]", "}", rdev::Key::RightBracket),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -522,9 +511,7 @@ impl Keyboard {
                 Vec2 { x: 80., y: 50. },
                 key_pair.2,
                 key_pair.0,
-                key_pair.1,
-                ui,
-            );
+                key_pair.1, ui, average_times);
 
             ui.add_space(SECTION_SPACE);
 
@@ -533,7 +520,7 @@ impl Keyboard {
                 ("End", rdev::Key::End),
                 ("PgDn", rdev::Key::PageDown),
             ] {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
         });
         ui.add_space(3.);
@@ -544,12 +531,10 @@ impl Keyboard {
                 map,
                 Vec2 { x: 85., y: 50. },
                 rdev::Key::CapsLock,
-                "Caps\nLock",
-                ui,
-            );
+                "Caps\nLock", ui, average_times);
 
             for key_pair in SECOND_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui);
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times);
             }
 
             for key_pair in [
@@ -557,7 +542,7 @@ impl Keyboard {
                 ("\"", "'", rdev::Key::Quote),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -566,9 +551,7 @@ impl Keyboard {
                 map,
                 Vec2 { x: 123., y: 50. },
                 rdev::Key::Return,
-                "Enter",
-                ui,
-            );
+                "Enter", ui, average_times);
 
             ui.add_space(SECTION_SPACE);
             for _ in 0..3 {
@@ -583,12 +566,10 @@ impl Keyboard {
                 map,
                 Vec2 { x: 118., y: 50. },
                 rdev::Key::ShiftLeft,
-                "Shift",
-                ui,
-            );
+                "Shift", ui, average_times);
 
             for key_pair in THIRD_ALPHA_LINE_PAIRS.iter() {
-                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui)
+                self.draw_single_label_key(map, basic_size, key_pair.1, key_pair.0, ui, average_times)
             }
 
             for key_pair in [
@@ -597,7 +578,7 @@ impl Keyboard {
                 ("?", "/", rdev::Key::Slash),
             ] {
                 self.draw_double_labels_key(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, ui, average_times,
                 );
             }
 
@@ -606,13 +587,11 @@ impl Keyboard {
                 map,
                 Vec2 { x: 148., y: 50. },
                 rdev::Key::ShiftRight,
-                "Shift",
-                ui,
-            );
+                "Shift", ui, average_times);
 
             ui.add_space(SECTION_SPACE);
             self.draw_empty_key(basic_size, ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui, average_times);
             self.draw_empty_key(basic_size, ui);
         });
         ui.add_space(3.);
@@ -620,27 +599,27 @@ impl Keyboard {
         // last line
         ui.horizontal(|ui| {
             let ctrl_size = Vec2 { x: 60., y: 50. };
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", ui);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", ui, average_times);
 
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::MetaLeft, "Win", ui);
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::Alt, "Alt", ui);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::MetaLeft, "Win", ui, average_times);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::Alt, "Alt", ui, average_times);
 
-            self.draw_single_label_key(map, Vec2 { x: 378., y: 50. }, rdev::Key::Space, " ", ui);
+            self.draw_single_label_key(map, Vec2 { x: 378., y: 50. }, rdev::Key::Space, " ", ui, average_times);
 
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::AltGr, "Alt", ui);
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::Function, "Fn", ui);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::AltGr, "Alt", ui, average_times);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::Function, "Fn", ui, average_times);
             // no menu in rdev::Key
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::Unknown(110), "Menu", ui);
-            self.draw_single_label_key(map, ctrl_size, rdev::Key::ControlRight, "Ctrl", ui);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::Unknown(110), "Menu", ui, average_times);
+            self.draw_single_label_key(map, ctrl_size, rdev::Key::ControlRight, "Ctrl", ui, average_times);
 
             ui.add_space(SECTION_SPACE);
-            self.draw_single_label_key(map, basic_size, rdev::Key::LeftArrow, "←", ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui);
-            self.draw_single_label_key(map, basic_size, rdev::Key::RightArrow, "→", ui);
+            self.draw_single_label_key(map, basic_size, rdev::Key::LeftArrow, "←", ui, average_times);
+            self.draw_single_label_key(map, basic_size, rdev::Key::UpArrow, "↑", ui, average_times);
+            self.draw_single_label_key(map, basic_size, rdev::Key::RightArrow, "→", ui, average_times);
         });
     }
 
-    fn draw_alice_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui) {
+    fn draw_alice_keyboard(&mut self, map: &MutexGuard<PressTimesMap>, ui: &mut Ui, average_times: u32) {
         let basic_size = Vec2 { x: 50., y: 50. };
         let left_divide_size = 10.;
         let middle_divide_size = 8.;
@@ -658,7 +637,7 @@ impl Keyboard {
         ui.horizontal(|ui| {
             ui.add_space(left_divide_size * 2.);
             let (rotation, offset) = get_config(0, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui, average_times);
 
             ui.add_space(left_divide_size);
 
@@ -666,7 +645,7 @@ impl Keyboard {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
                 let (rotation, offset) = get_config(0, idx + 1, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui, average_times,
                 );
                 if key_pair.2 == rdev::Key::Num2 || key_pair.2 == rdev::Key::Num6 || key_pair.2 == rdev::Key::Num0 {
                     ui.add_space(middle_divide_size);
@@ -681,9 +660,7 @@ impl Keyboard {
                 rdev::Key::Backspace,
                 "Back",
                 rotation,
-                offset,
-                ui,
-            );
+                offset, ui, average_times);
         });
         ui.add_space(3.);
 
@@ -691,16 +668,16 @@ impl Keyboard {
         ui.horizontal(|ui| {
             ui.add_space(left_divide_size);
             let (rotation, offset) = get_config(1, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui, average_times);
 
             ui.add_space(left_divide_size);
 
             let (rotation, offset) = get_config(1, 1, "Tab");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 70., y: 50. }, rdev::Key::Tab, "Tab", rotation, offset, ui, average_times);
 
             for (idx, key_pair) in FIRST_ALPHA_LINE_PAIRS.iter().enumerate() {
                 let (rotation, offset) = get_config(1, idx + 2, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui, average_times);
                 if key_pair.1 == rdev::Key::KeyQ {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -725,7 +702,7 @@ impl Keyboard {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
                 let (rotation, offset) = get_config(1, idx + 12, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui, average_times,
                 );
             }
 
@@ -739,16 +716,14 @@ impl Keyboard {
                 key_pair.0,
                 key_pair.1,
                 rotation,
-                offset,
-                ui,
-            );
+                offset, ui, average_times);
         });
         ui.add_space(3.);
 
         // Row 2 - ASDF row
         ui.horizontal(|ui| {
             let (rotation, offset) = get_config(2, 0, "Esc");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::Escape, "Esc", rotation, offset, ui, average_times);
 
             ui.add_space(left_divide_size);
 
@@ -759,13 +734,11 @@ impl Keyboard {
                 rdev::Key::CapsLock,
                 "Caps\nLock",
                 rotation,
-                offset,
-                ui,
-            );
+                offset, ui, average_times);
 
             for (idx, key_pair) in SECOND_ALPHA_LINE_PAIRS.iter().enumerate() {
                 let (rotation, offset) = get_config(2, idx + 2, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui, average_times);
                 if key_pair.1 == rdev::Key::KeyA {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -790,7 +763,7 @@ impl Keyboard {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
                 let (rotation, offset) = get_config(2, idx + 11, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui, average_times,
                 );
             }
 
@@ -802,9 +775,7 @@ impl Keyboard {
                 rdev::Key::Return,
                 "Enter",
                 rotation,
-                offset,
-                ui,
-            );
+                offset, ui, average_times);
         });
         ui.add_space(3.);
 
@@ -819,13 +790,11 @@ impl Keyboard {
                 rdev::Key::ShiftLeft,
                 "Shift",
                 rotation,
-                offset,
-                ui,
-            );
+                offset, ui, average_times);
 
             for (idx, key_pair) in THIRD_ALPHA_LINE_PAIRS_ALICE.iter().enumerate() {
                 let (rotation, offset) = get_config(3, idx + 1, key_pair.0);
-                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui);
+                self.draw_single_label_key_rotated(map, basic_size, key_pair.1, key_pair.0, rotation, offset, ui, average_times);
                 if key_pair.1 == rdev::Key::KeyZ {
                     ui.add_space(middle_divide_size);
                     continue;
@@ -847,7 +816,7 @@ impl Keyboard {
                 let label = format!("{}{}", key_pair.1, key_pair.0);
                 let (rotation, offset) = get_config(3, idx + 9, &label);
                 self.draw_double_labels_key_rotated(
-                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui,
+                    map, basic_size, key_pair.2, key_pair.0, key_pair.1, rotation, offset, ui, average_times,
                 );
                 if key_pair.2 == rdev::Key::Comma {
                     ui.add_space(middle_divide_size);
@@ -855,10 +824,10 @@ impl Keyboard {
             }
 
             let (rotation, offset) = get_config(3, 12, "↑");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::UpArrow, "↑", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::UpArrow, "↑", rotation, offset, ui, average_times);
             // right shift
             let (rotation, offset) = get_config(3, 13, "Shift");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 100., y: 50. }, rdev::Key::ShiftRight, "Shift", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 100., y: 50. }, rdev::Key::ShiftRight, "Shift", rotation, offset, ui, average_times);
         });
         ui.add_space(3.);
 
@@ -868,27 +837,27 @@ impl Keyboard {
 
             let ctrl_size = Vec2 { x: 65., y: 50. };
             let (rotation, offset) = get_config(4, 0, "Ctrl");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::ControlLeft, "Ctrl", rotation, offset, ui, average_times);
 
             let (rotation, offset) = get_config(4, 1, "Fn");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::Function, "Fn", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::Function, "Fn", rotation, offset, ui, average_times);
             ui.add_space(65.);
             let (rotation, offset) = get_config(4, 2, "Cmd");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 61., y: 50. }, rdev::Key::MetaLeft, "Cmd", rotation, offset, ui, average_times);
             let (rotation, offset) = get_config(4, 3, "Option");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Option", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 120., y: 50. }, rdev::Key::Alt, "Option", rotation, offset, ui, average_times);
             ui.add_space(50.);
             let (rotation, offset) = get_config(4, 4, " ");
-            self.draw_single_label_key_rotated(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, Vec2 { x: 158., y: 50. }, rdev::Key::Space, " ", rotation, offset, ui, average_times);
             let (rotation, offset) = get_config(4, 5, "Win");
-            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::MetaLeft, "Win", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, ctrl_size, rdev::Key::MetaLeft, "Win", rotation, offset, ui, average_times);
             ui.add_space(35.);
             let (rotation, offset) = get_config(4, 6, "←");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::LeftArrow, "←", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::LeftArrow, "←", rotation, offset, ui, average_times);
             let (rotation, offset) = get_config(4, 7, "↓");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::DownArrow, "↓", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::DownArrow, "↓", rotation, offset, ui, average_times);
             let (rotation, offset) = get_config(4, 8, "→");
-            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::RightArrow, "→", rotation, offset, ui);
+            self.draw_single_label_key_rotated(map, basic_size, rdev::Key::RightArrow, "→", rotation, offset, ui, average_times);
         });
     }
 
@@ -900,6 +869,7 @@ impl Keyboard {
         top_name: &str,
         bottom_name: &str,
         ui: &mut Ui,
+        average_times: u32,
     ) {
         let times = map.get_key_times(key);
         let mut key = KeyBox::new(
@@ -913,7 +883,7 @@ impl Keyboard {
                 self.font_size,
                 self.bold,
         );
-        key.ui(ui);
+        key.ui(ui, average_times);
     }
 
     fn draw_double_labels_key_rotated(
@@ -926,6 +896,7 @@ impl Keyboard {
         rotation: f32,
         offset: Vec2,
         ui: &mut Ui,
+        average_times: u32,
     ) {
         let times = map.get_key_times(key);
         let mut key = KeyBox::new(
@@ -940,7 +911,7 @@ impl Keyboard {
                 self.bold,
         )
         .with_rotation_and_offset(rotation, offset);
-        key.ui(ui);
+        key.ui(ui, average_times);
     }
 
     fn draw_single_label_key(
@@ -950,6 +921,7 @@ impl Keyboard {
         key: rdev::Key,
         name: &str,
         ui: &mut Ui,
+        average_times: u32,
     ) {
         let times = map.get_key_times(key);
         let mut key = KeyBox::new(
@@ -963,7 +935,7 @@ impl Keyboard {
                 self.font_size,
                 self.bold,
         );
-        key.ui(ui);
+        key.ui(ui, average_times);
     }
 
     fn draw_single_label_key_rotated(
@@ -975,6 +947,7 @@ impl Keyboard {
         rotation: f32,
         offset: Vec2,
         ui: &mut Ui,
+        average_times: u32,
     ) {
         let times = map.get_key_times(key);
         let mut key = KeyBox::new(
@@ -989,7 +962,7 @@ impl Keyboard {
                 self.bold,
         )
         .with_rotation_and_offset(rotation, offset);
-        key.ui(ui);
+        key.ui(ui, average_times);
     }
 
     fn draw_empty_key(&mut self, size: Vec2, ui: &mut Ui) {

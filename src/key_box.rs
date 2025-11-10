@@ -3,8 +3,6 @@ use egui::{Align2, Color32, RichText, Sense, Stroke, Ui, Vec2};
 use crate::color::{get_color, get_strike_color};
 use crate::app::FontFamily;
 use eframe::egui::emath::Rot2;
-use std::sync::atomic::Ordering;
-use crate::press_time_map::AVERAGE_TIMES;
 
 /// Layout in a key box, shows how to display the key contents
 #[derive(Clone)]
@@ -28,6 +26,11 @@ pub struct KeyBox {
     font_family: FontFamily,
     font_size: f32,
     bold: bool,
+    // Color cache
+    cached_color: Option<Color32>,
+    cached_stroke_color: Option<Color32>,
+    cached_press_times: u32,
+    cached_average_times: u32,
 }
 
 impl KeyBox {
@@ -56,6 +59,10 @@ impl KeyBox {
             font_family,
             font_size,
             bold,
+            cached_color: None,
+            cached_stroke_color: None,
+            cached_press_times: 0,
+            cached_average_times: 0,
         }
     }
 
@@ -78,9 +85,30 @@ impl KeyBox {
     }
 }
 impl KeyBox {
-    pub fn ui(&mut self, ui: &mut Ui) {
+    pub fn ui(&mut self, ui: &mut Ui, average_times: u32) {
         let (rect, _resp) = ui.allocate_exact_size(self.size, Sense::hover());
-        let filled_color = get_color(self.hue, self.press_times * 32 / (AVERAGE_TIMES.load(Ordering::Relaxed) as u32), self.dark_mode);
+
+        // Only recalculate colors if press_times or average_times changed
+        let needs_color_update = self.cached_color.is_none()
+            || self.cached_press_times != self.press_times
+            || self.cached_average_times != average_times;
+
+        let (filled_color, stroke_color) = if needs_color_update {
+            let normalized_times = self.press_times * 32 / average_times;
+            let color = get_color(self.hue, normalized_times, self.dark_mode);
+            let stroke = get_strike_color(color, self.dark_mode);
+
+            // Update cache
+            self.cached_color = Some(color);
+            self.cached_stroke_color = Some(stroke);
+            self.cached_press_times = self.press_times;
+            self.cached_average_times = average_times;
+
+            (color, stroke)
+        } else {
+            // Use cached colors
+            (self.cached_color.unwrap(), self.cached_stroke_color.unwrap())
+        };
 
         // Text color based on theme
         let text_color = if self.dark_mode {
@@ -185,7 +213,6 @@ impl KeyBox {
             ui.painter().add(egui::Shape::mesh(mesh));
 
             // Draw stroke for rotated rectangle with rounded corners
-            let stroke_color = get_strike_color(filled_color, self.dark_mode);
             for i in 0..vertices.len() {
                 let next_i = (i + 1) % vertices.len();
                 ui.painter().line_segment(
@@ -302,7 +329,7 @@ impl KeyBox {
                 self.rounding,
                 Stroke {
                     width: self.stroke_width,
-                    color: get_strike_color(filled_color, self.dark_mode),
+                    color: stroke_color,
                 },
                 egui::epaint::StrokeKind::Middle,
             );
