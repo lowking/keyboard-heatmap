@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 
 pub struct PressTimesMap {
     pub map: HashMap<rdev::Key, u32>,
@@ -7,6 +7,8 @@ pub struct PressTimesMap {
 
 pub static TOTLE_TIMES: AtomicUsize = AtomicUsize::new(100);
 pub static AVERAGE_TIMES: AtomicUsize = AtomicUsize::new(1);
+// Flag to track if data has changed since last render
+pub static DATA_CHANGED: AtomicBool = AtomicBool::new(false);
 
 impl PressTimesMap {
     pub fn new() -> Self {
@@ -17,6 +19,7 @@ impl PressTimesMap {
     pub fn clear() {
         TOTLE_TIMES.store(100 as usize, Ordering::Relaxed);
         AVERAGE_TIMES.store(1 as usize, Ordering::Relaxed);
+        DATA_CHANGED.store(true, Ordering::Relaxed);
     }
     pub fn key_press(&mut self, key: rdev::Key) {
         // incompatitive cases
@@ -43,6 +46,8 @@ impl PressTimesMap {
         };
         TOTLE_TIMES.fetch_add(1, Ordering::Relaxed);
         AVERAGE_TIMES.store(TOTLE_TIMES.load(Ordering::Relaxed) / self.map.len(), Ordering::Relaxed);
+        // Mark data as changed to trigger repaint
+        DATA_CHANGED.store(true, Ordering::Relaxed);
     }
     pub fn get_key_times(&self, key: rdev::Key) -> u32 {
         match self.map.get(&key) {

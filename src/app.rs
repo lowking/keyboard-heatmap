@@ -107,8 +107,17 @@ impl eframe::App for KeyboardHeatmap {
             ctx.set_visuals(egui::Visuals::light());
         }
 
-        // Request repaint at a reasonable rate (5 FPS) to save CPU
-        ctx.request_repaint_after(std::time::Duration::from_millis(200));
+        // Check if data has changed and request repaint only when needed
+        use crate::press_time_map::DATA_CHANGED;
+        let data_changed = DATA_CHANGED.swap(false, Ordering::Relaxed);
+
+        if data_changed {
+            // Request immediate repaint when data changes
+            ctx.request_repaint();
+        } else {
+            // When idle, check less frequently (3 FPS = 333ms)
+            ctx.request_repaint_after(std::time::Duration::from_millis(333));
+        }
 
         let background_color = if state.dark_mode {
             Color32::from_rgb(0x3A, 0x38, 0x37)
@@ -139,6 +148,9 @@ impl eframe::App for KeyboardHeatmap {
                     state.start_time = chrono::Local::now();
                     press_map.map.clear();
                     PressTimesMap::clear();
+                    // Trigger repaint after clear
+                    use crate::press_time_map::DATA_CHANGED;
+                    DATA_CHANGED.store(true, Ordering::Relaxed);
                 }
 
                 egui::ComboBox::from_id_salt("keyboard_selector")

@@ -31,6 +31,8 @@ pub struct KeyBox {
     cached_stroke_color: Option<Color32>,
     cached_press_times: u32,
     cached_average_times: u32,
+    // Font cache
+    cached_font_id: Option<egui::FontId>,
 }
 
 impl KeyBox {
@@ -63,6 +65,7 @@ impl KeyBox {
             cached_stroke_color: None,
             cached_press_times: 0,
             cached_average_times: 0,
+            cached_font_id: None,
         }
     }
 
@@ -117,18 +120,24 @@ impl KeyBox {
             Color32::from_rgb(32, 5, 64)  // Dark purple for light mode
         };
 
-        // Get font ID based on font family and apply bold if needed
-        let font_id = if self.bold {
-            // For bold text, increase the font size slightly and use stronger stroke
-            match self.font_family {
-                FontFamily::Monospace => egui::FontId::monospace(self.font_size * 1.1),
-                FontFamily::Proportional => egui::FontId::proportional(self.font_size * 1.1),
-            }
+        // Get or create cached font ID
+        let font_id = if let Some(ref cached) = self.cached_font_id {
+            cached.clone()
         } else {
-            match self.font_family {
-                FontFamily::Monospace => egui::FontId::monospace(self.font_size),
-                FontFamily::Proportional => egui::FontId::proportional(self.font_size),
-            }
+            let font_id = if self.bold {
+                // For bold text, increase the font size slightly
+                match self.font_family {
+                    FontFamily::Monospace => egui::FontId::monospace(self.font_size * 1.1),
+                    FontFamily::Proportional => egui::FontId::proportional(self.font_size * 1.1),
+                }
+            } else {
+                match self.font_family {
+                    FontFamily::Monospace => egui::FontId::monospace(self.font_size),
+                    FontFamily::Proportional => egui::FontId::proportional(self.font_size),
+                }
+            };
+            self.cached_font_id = Some(font_id.clone());
+            font_id
         };
 
         if self.rotation != 0.0 {
